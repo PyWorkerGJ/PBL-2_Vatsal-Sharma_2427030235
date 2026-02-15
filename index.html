@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBL Presentation | 2026</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+body {
+    background-color: #020617;
+    color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    scroll-behavior: smooth;
+}
+.glass {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.gradient-text {
+    background: linear-gradient(90deg,#60a5fa,#a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="fixed w-full z-50 glass border-b border-slate-800 px-8 py-4 flex justify-between items-center">
+    <div>
+        <span class="text-xl font-black uppercase">PBL <span class="text-blue-500 italic">2026</span></span>
+        <div class="text-[10px] text-slate-400 uppercase">Dept. of Computer Science & Engineering</div>
+    </div>
+
+    <div class="hidden md:flex gap-8 text-xs uppercase tracking-widest font-bold">
+        <a href="#problem" class="hover:text-blue-400 transition">Problem</a>
+        <a href="#methodology" class="hover:text-blue-400 transition">Methodology</a>
+        <a href="#results" class="hover:text-blue-400 transition">Results</a>
+        <a href="#team" class="hover:text-blue-400 transition">Team</a>
+    </div>
+</nav>
+
+<main class="max-w-6xl mx-auto px-6 pt-48 pb-32 space-y-32">
+
+<section class="text-center">
+    <div class="inline-block px-4 py-1 border border-slate-800 rounded-full text-slate-500 text-xs mb-6 uppercase">
+        ID: 2427030235
+    </div>
+    <h1 class="text-6xl font-extrabold mb-8 uppercase">
+        <span class="gradient-text">Smart Resource Booking & Management System</span>
+    </h1>
+    <p class="text-slate-400 max-w-2xl mx-auto italic text-lg border-l-2 border-blue-500/30 pl-6 text-left">
+        Efficient, Transparent, and Reward-Driven Resource Management
+    </p>
+</section>
+
+<section id="problem" class="grid md:grid-cols-2 gap-12">
+    <div class="glass p-10 rounded-[2.5rem] border-l-4 border-blue-600">
+        <h2 class="text-3xl font-extrabold mb-6">Problem Statement</h2>
+        <p class="text-slate-400 leading-relaxed text-justify">
+            70% of organizations report resource conflicts and underutilization causing delays and cost overruns.
+            Manual booking leads to double bookings and wasted administrative time.
+            Human and physical resources remain under-optimized impacting profitability and employee satisfaction.
+        </p>
+    </div>
+    <div class="space-y-6">
+        <div class="glass p-7 rounded-3xl border-r-4 border-blue-500/50">
+            <h3 class="text-blue-400 font-bold uppercase text-xs mb-2">What is Smart Booking?</h3>
+            <p class="text-sm text-slate-400">
+                Automated scheduling with real-time availability and intelligent conflict resolution.
+            </p>
+        </div>
+        <div class="glass p-7 rounded-3xl border-r-4 border-purple-500/50">
+            <h3 class="text-purple-400 font-bold uppercase text-xs mb-2">Innovation</h3>
+            <p class="text-sm text-slate-400">
+                Ensures right resource, right time, right place using smart algorithms.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="methodology" class="space-y-16 pt-20">
+
+    <h2 class="text-5xl font-black text-center uppercase tracking-tight">
+        System <span class="text-blue-500">Methodology</span>
+    </h2>
+
+    <div class="grid md:grid-cols-3 gap-10">
+
+        <div class="glass p-10 rounded-[2.5rem] text-center border border-slate-800">
+            <i class="fas fa-database text-blue-500 text-4xl mb-6"></i>
+            <h3 class="font-bold mb-4 uppercase tracking-widest text-sm">
+                Dataset / Input
+            </h3>
+            <p class="text-slate-500 text-sm leading-relaxed">
+                Resource data including rooms, equipment, personnel and booking history.
+                Preprocessing ensures validation and conflict detection.
+            </p>
+        </div>
+
+        <div class="glass p-10 rounded-[2.5rem] text-center border border-slate-800">
+            <i class="fas fa-microchip text-purple-500 text-4xl mb-6"></i>
+            <h3 class="font-bold mb-4 uppercase tracking-widest text-sm">
+                Model / Architecture
+            </h3>
+            <p class="text-slate-500 text-sm leading-relaxed">
+                Intelligent matching algorithms with automated approval workflows,
+                calendar synchronization and scalable system architecture.
+            </p>
+        </div>
+
+        <div class="glass p-10 rounded-[2.5rem] text-center border-2 border-green-500/30 bg-green-500/5">
+            <i class="fab fa-python text-green-500 text-4xl mb-6"></i>
+            <h3 class="font-bold mb-6 uppercase tracking-widest text-sm text-green-400">
+                Live Execution
+            </h3>
+            <a href="#" target="_blank"
+               class="px-8 py-3 bg-green-600 rounded-full text-xs font-black hover:bg-green-500 transition shadow-lg shadow-green-900/40">
+                VIEW CODE / DEMO
+            </a>
+        </div>
+
+    </div>
+</section>
+
+<section class="space-y-12">
+    <h2 class="text-4xl font-black text-center uppercase">Real-World Success</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+        <div class="glass p-8 rounded-3xl text-center">
+            <p class="text-slate-400 text-sm">Higher Education improved utilization by 35%.</p>
+        </div>
+        <div class="glass p-8 rounded-3xl text-center">
+            <p class="text-slate-400 text-sm">Healthcare reduced scheduling conflicts by 40%.</p>
+        </div>
+        <div class="glass p-8 rounded-3xl text-center">
+            <p class="text-slate-400 text-sm">Corporations centralized desk and asset management.</p>
+        </div>
+    </div>
+</section>
+
+<section id="results" class="glass p-12 rounded-[3.5rem] border-t-4 border-blue-500">
+    <h2 class="text-3xl font-black mb-12 text-center uppercase">Results & Analysis</h2>
+    <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div class="h-80"><canvas id="resultsChart"></canvas></div>
+        <div class="space-y-6">
+            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
+                <span class="text-slate-400 uppercase text-xs">Admin Reduction</span>
+                <span class="text-blue-400 font-black text-3xl">50%</span>
+            </div>
+            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
+                <span class="text-slate-400 uppercase text-xs">Usage Increase</span>
+                <span class="text-green-400 font-black text-3xl">30%</span>
+            </div>
+            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
+                <span class="text-slate-400 uppercase text-xs">User Satisfaction</span>
+                <span class="text-purple-400 font-black text-3xl">95%</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="team" class="text-center pt-20 border-t border-slate-900">
+    <h2 class="text-xs font-black text-slate-600 uppercase tracking-widest mb-12">Academic Credits</h2>
+    <div class="flex flex-wrap justify-center gap-10">
+        <div class="glass px-12 py-8 rounded-2xl border-b-4 border-blue-600">
+            <p class="text-xs font-bold text-blue-500 mb-2 uppercase">Project Guide</p>
+            <p class="font-black text-xl">Ms. Harshika Mathur</p>
+        </div>
+        <div class="glass px-12 py-8 rounded-2xl border-b-4 border-slate-700">
+            <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Presented By</p>
+            <p class="font-black text-xl">Vatsal Sharma</p>
+            <p class="text-xs text-slate-500 mt-1">2427030235 | Section G</p>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer class="py-20 text-center bg-black border-t border-slate-900">
+    <p class="text-slate-500 text-sm tracking-[0.4em] uppercase mb-4">
+        Manipal University Jaipur
+    </p>
+    <p class="text-slate-600 text-xs tracking-[0.3em] uppercase">
+        Department of Computer Science & Engineering • 2026
+    </p>
+</footer>
+
+<script>
+const ctx = document.getElementById('resultsChart').getContext('2d');
+new Chart(ctx,{
+    type:'bar',
+    data:{
+        labels:['Existing System','Our System'],
+        datasets:[{
+            data:[70,92],
+            backgroundColor:['#1e293b','#3b82f6'],
+            borderRadius:15
+        }]
+    },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false}}
+    }
+});
+</script>
+    
+
+</body>
+</html>
