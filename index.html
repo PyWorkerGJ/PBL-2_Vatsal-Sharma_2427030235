@@ -42,6 +42,9 @@ body {
         <a href="#methodology" class="hover:text-blue-400 transition">Methodology</a>
         <a href="#results" class="hover:text-blue-400 transition">Results</a>
         <a href="#team" class="hover:text-blue-400 transition">Team</a>
+        <a href="tech-demo/demo.html"
+       class="text-green-400 hover:text-green-300 transition font-extrabold">
+        Tech Demo </a>
     </div>
 </nav>
 
@@ -57,6 +60,28 @@ body {
     <p class="text-slate-400 max-w-2xl mx-auto italic text-lg border-l-2 border-blue-500/30 pl-6 text-left">
         Efficient, Transparent, and Reward-Driven Resource Management
     </p>
+
+ 
+    <div class="mt-14 flex justify-center gap-6 flex-wrap">
+
+        <a href="tech-demo/demo.html"
+           class="group relative inline-flex items-center px-10 py-4 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold uppercase tracking-widest shadow-xl hover:scale-105 transition-all duration-300">
+
+            <span class="absolute right-0 w-8 h-32 -mt-12 transition-all duration-1000 transform translate-x-12 bg-white opacity-10 rotate-12 group-hover:-translate-x-40 ease"></span>
+
+            🚀 Launch Technical Demo
+        </a>
+
+        <a href="https://github.com/PyWorkerGJ/PBL-2_Vatsal-Sharma_2427030235"
+           target="_blank"
+           class="px-10 py-4 border border-slate-700 rounded-full font-bold uppercase tracking-widest hover:border-blue-500 hover:text-blue-400 transition-all duration-300">
+
+            <i class="fab fa-github mr-2"></i> View Repository
+        </a>
+
+    </div>
+
+
 </section>
 
 <section id="problem" class="grid md:grid-cols-2 gap-12">
@@ -83,6 +108,8 @@ body {
         </div>
     </div>
 </section>
+
+
 
 <section id="methodology" class="space-y-16 pt-20">
 
@@ -119,97 +146,14 @@ body {
             <h3 class="font-bold mb-6 uppercase tracking-widest text-sm text-green-400">
                 Live Execution
             </h3>
-            <a href="#" target="_blank"
+            <a href="tech-demo/demo.html" target="_blank"
                class="px-8 py-3 bg-green-600 rounded-full text-xs font-black hover:bg-green-500 transition shadow-lg shadow-green-900/40">
-                VIEW CODE / DEMO
+                VIEW LIVE DEMO
             </a>
         </div>
 
     </div>
 </section>
 
-<section class="space-y-12">
-    <h2 class="text-4xl font-black text-center uppercase">Real-World Success</h2>
-    <div class="grid md:grid-cols-3 gap-8">
-        <div class="glass p-8 rounded-3xl text-center">
-            <p class="text-slate-400 text-sm">Higher Education improved utilization by 35%.</p>
-        </div>
-        <div class="glass p-8 rounded-3xl text-center">
-            <p class="text-slate-400 text-sm">Healthcare reduced scheduling conflicts by 40%.</p>
-        </div>
-        <div class="glass p-8 rounded-3xl text-center">
-            <p class="text-slate-400 text-sm">Corporations centralized desk and asset management.</p>
-        </div>
-    </div>
-</section>
 
-<section id="results" class="glass p-12 rounded-[3.5rem] border-t-4 border-blue-500">
-    <h2 class="text-3xl font-black mb-12 text-center uppercase">Results & Analysis</h2>
-    <div class="grid md:grid-cols-2 gap-16 items-center">
-        <div class="h-80"><canvas id="resultsChart"></canvas></div>
-        <div class="space-y-6">
-            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
-                <span class="text-slate-400 uppercase text-xs">Admin Reduction</span>
-                <span class="text-blue-400 font-black text-3xl">50%</span>
-            </div>
-            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
-                <span class="text-slate-400 uppercase text-xs">Usage Increase</span>
-                <span class="text-green-400 font-black text-3xl">30%</span>
-            </div>
-            <div class="p-6 rounded-2xl bg-white/5 flex justify-between">
-                <span class="text-slate-400 uppercase text-xs">User Satisfaction</span>
-                <span class="text-purple-400 font-black text-3xl">95%</span>
-            </div>
-        </div>
-    </div>
-</section>
 
-<section id="team" class="text-center pt-20 border-t border-slate-900">
-    <h2 class="text-xs font-black text-slate-600 uppercase tracking-widest mb-12">Academic Credits</h2>
-    <div class="flex flex-wrap justify-center gap-10">
-        <div class="glass px-12 py-8 rounded-2xl border-b-4 border-blue-600">
-            <p class="text-xs font-bold text-blue-500 mb-2 uppercase">Project Guide</p>
-            <p class="font-black text-xl">Ms. Harshika Mathur</p>
-        </div>
-        <div class="glass px-12 py-8 rounded-2xl border-b-4 border-slate-700">
-            <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Presented By</p>
-            <p class="font-black text-xl">Vatsal Sharma</p>
-            <p class="text-xs text-slate-500 mt-1">2427030235 | Section G</p>
-        </div>
-    </div>
-</section>
-
-</main>
-
-<footer class="py-20 text-center bg-black border-t border-slate-900">
-    <p class="text-slate-500 text-sm tracking-[0.4em] uppercase mb-4">
-        Manipal University Jaipur
-    </p>
-    <p class="text-slate-600 text-xs tracking-[0.3em] uppercase">
-        Department of Computer Science & Engineering • 2026
-    </p>
-</footer>
-
-<script>
-const ctx = document.getElementById('resultsChart').getContext('2d');
-new Chart(ctx,{
-    type:'bar',
-    data:{
-        labels:['Existing System','Our System'],
-        datasets:[{
-            data:[70,92],
-            backgroundColor:['#1e293b','#3b82f6'],
-            borderRadius:15
-        }]
-    },
-    options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        plugins:{legend:{display:false}}
-    }
-});
-</script>
-    
-
-</body>
-</html>
