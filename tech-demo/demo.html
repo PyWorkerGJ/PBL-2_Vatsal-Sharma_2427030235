@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Smart Resource Booking – Technical Demo</title>
+<title>Smart Resource Booking</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #1f2937, #111827);
     margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg,#0f172a,#1e293b);
     color: white;
+    overflow-x: hidden;
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
 }
 
 .container {
@@ -16,57 +25,106 @@ body {
     text-align: center;
 }
 
+h1 {
+    font-size: 40px;
+    margin-bottom: 5px;
+}
+
 .subtitle {
-    opacity: 0.7;
-    margin-bottom: 40px;
+    opacity: 0.6;
+    margin-bottom: 50px;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
+    gap: 40px;
 }
 
 .card {
-    background: #1e293b;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-    transition: transform 0.2s;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    transition: 0.3s;
 }
 
 .card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
 }
 
 input, select {
     width: 100%;
-    padding: 8px;
-    margin-top: 10px;
-    border-radius: 8px;
+    padding: 10px;
+    margin-top: 12px;
+    border-radius: 10px;
     border: none;
 }
 
 button {
     margin-top: 15px;
-    padding: 10px;
+    padding: 12px;
     width: 100%;
+    border-radius: 10px;
     border: none;
-    border-radius: 8px;
-    background: #3b82f6;
+    background: linear-gradient(45deg,#3b82f6,#2563eb);
     color: white;
     font-weight: bold;
     cursor: pointer;
+    transition: 0.3s;
 }
 
 button:hover {
-    background: #2563eb;
+    transform: scale(1.05);
 }
 
 .result {
-    margin-top: 15px;
+    margin-top: 20px;
+    font-size: 20px;
     font-weight: bold;
-    font-size: 18px;
+    transition: 0.3s;
+}
+
+.success { color: #22c55e; }
+.error { color: #ef4444; }
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 34px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #3b82f6;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
 }
 </style>
 
@@ -76,13 +134,13 @@ button:hover {
 
 <div class="container">
 <h1>🚀 Smart Resource Booking</h1>
-<p class="subtitle">Technical Engine Demonstration</p>
+<p class="subtitle">Next-Gen Technical Engine Demo</p>
 
 <div class="grid">
 
 <div class="card">
 <h2>📅 Conflict Detection</h2>
-<p>Existing Booking: <strong>10–12</strong></p>
+<p>Existing Booking: <b>10–12</b></p>
 <input type="number" id="start" placeholder="Start Hour">
 <input type="number" id="end" placeholder="End Hour">
 <button onclick="checkConflict()">Check</button>
@@ -92,8 +150,23 @@ button:hover {
 <div class="card">
 <h2>💰 Dynamic Pricing</h2>
 <input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
-<label><input type="checkbox" id="peak"> Peak Hour</label>
-<label><input type="checkbox" id="exam"> Exam Week</label>
+
+<div style="margin-top:15px;">
+Peak Hour
+<label class="switch">
+<input type="checkbox" id="peak">
+<span class="slider"></span>
+</label>
+</div>
+
+<div style="margin-top:15px;">
+Exam Week
+<label class="switch">
+<input type="checkbox" id="exam">
+<span class="slider"></span>
+</label>
+</div>
+
 <button onclick="calculatePrice()">Calculate</button>
 <div class="result" id="priceResult"></div>
 </div>
@@ -101,10 +174,10 @@ button:hover {
 <div class="card">
 <h2>🎮 Reward System</h2>
 <select id="action">
-<option value="10">On-Time Checkout (+10)</option>
-<option value="5">Early Cancel (+5)</option>
-<option value="-15">No Show (-15)</option>
-<option value="-5">Peak Booking (-5)</option>
+<option value="10">On-Time Checkout</option>
+<option value="5">Early Cancel</option>
+<option value="-15">No Show</option>
+<option value="-5">Peak Booking</option>
 </select>
 <button onclick="calculateCoins()">Calculate</button>
 <div class="result" id="coinResult"></div>
@@ -122,44 +195,54 @@ button:hover {
 </div>
 
 <script>
-function checkConflict() {
-let existingStart = 10;
-let existingEnd = 12;
-let start = parseInt(document.getElementById("start").value);
-let end = parseInt(document.getElementById("end").value);
+function checkConflict(){
+let s=parseInt(start.value);
+let e=parseInt(end.value);
+let r=document.getElementById("conflictResult");
 
-if ((start < existingEnd) && (end > existingStart)) {
-document.getElementById("conflictResult").innerHTML = "❌ Conflict Detected";
-} else {
-document.getElementById("conflictResult").innerHTML = "✅ Booking Approved";
+if((s<12)&&(e>10)){
+r.innerHTML="❌ Conflict Detected";
+r.className="result error";
+}else{
+r.innerHTML="✅ Booking Approved";
+r.className="result success";
 }
 }
 
-function calculatePrice() {
-let base = 500;
-let demand = parseFloat(document.getElementById("demand").value) || 0;
-let peak = document.getElementById("peak").checked ? 1.5 : 1;
-let exam = document.getElementById("exam").checked ? 1.8 : 1;
+function calculatePrice(){
+let base=500;
+let d=parseFloat(demand.value)||0;
+let p=peak.checked?1.5:1;
+let ex=exam.checked?1.8:1;
+let final=base*(1+d)*p*ex;
 
-let finalPrice = base * (1 + demand) * peak * exam;
-
-document.getElementById("priceResult").innerHTML =
-"₹ " + finalPrice.toFixed(2);
+let r=document.getElementById("priceResult");
+let count=0;
+let interval=setInterval(()=>{
+count+=final/20;
+if(count>=final){
+count=final;
+clearInterval(interval);
+}
+r.innerHTML="₹ "+count.toFixed(0);
+r.className="result success";
+},30);
 }
 
-function calculateCoins() {
-let value = document.getElementById("action").value;
-document.getElementById("coinResult").innerHTML =
-"Coins Earned: " + value;
+function calculateCoins(){
+let val=action.value;
+let r=document.getElementById("coinResult");
+r.innerHTML="Coins Earned: "+val;
+r.className="result success";
 }
 
-function calculateUtilization() {
-let booked = parseInt(document.getElementById("booked").value);
-let total = parseInt(document.getElementById("total").value);
-
-let rate = (booked / total) * 100;
-document.getElementById("utilResult").innerHTML =
-rate.toFixed(2) + "% Utilization";
+function calculateUtilization(){
+let b=parseInt(booked.value);
+let t=parseInt(total.value);
+let r=document.getElementById("utilResult");
+let rate=(b/t)*100;
+r.innerHTML=rate.toFixed(2)+"% Utilization";
+r.className="result success";
 }
 </script>
 
