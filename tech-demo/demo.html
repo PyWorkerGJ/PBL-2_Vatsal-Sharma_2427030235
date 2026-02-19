@@ -6,44 +6,56 @@
 </head>
 <body>
 
-<h1>Smart Resource Booking – Technical Engine Demo</h1>
+<div class="container">
 
-<div class="card">
-    <h2>📅 Conflict Detection Engine</h2>
-    <p>Existing Booking: 10–12</p>
-    <input type="number" id="start" placeholder="Start Hour">
-    <input type="number" id="end" placeholder="End Hour">
-    <button onclick="checkConflict()">Check</button>
-    <p id="conflictResult"></p>
-</div>
+    <h1>🚀 Smart Resource Booking</h1>
+    <p class="subtitle">Technical Engine Demonstration</p>
 
-<div class="card">
-    <h2>💰 Dynamic Pricing Engine</h2>
-    <input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
-    <label><input type="checkbox" id="peak"> Peak Hour</label>
-    <label><input type="checkbox" id="exam"> Exam Week</label>
-    <button onclick="calculatePrice()">Calculate</button>
-    <p id="priceResult"></p>
-</div>
+    <div class="grid">
 
-<div class="card">
-    <h2>🎮 Reward System</h2>
-    <select id="action">
-        <option value="10">On-Time Checkout (+10)</option>
-        <option value="5">Early Cancel (+5)</option>
-        <option value="-15">No Show (-15)</option>
-        <option value="-5">Peak Booking (-5)</option>
-    </select>
-    <button onclick="calculateCoins()">Calculate</button>
-    <p id="coinResult"></p>
-</div>
+        <!-- Conflict Detection -->
+        <div class="card">
+            <h2>📅 Conflict Detection</h2>
+            <p>Existing Booking: <strong>10–12</strong></p>
+            <input type="number" id="start" placeholder="Start Hour">
+            <input type="number" id="end" placeholder="End Hour">
+            <button onclick="checkConflict()">Check</button>
+            <div class="result" id="conflictResult"></div>
+        </div>
 
-<div class="card">
-    <h2>📊 Utilization Analytics</h2>
-    <input type="number" id="booked" placeholder="Booked Hours">
-    <input type="number" id="total" placeholder="Total Hours">
-    <button onclick="calculateUtilization()">Calculate</button>
-    <p id="utilResult"></p>
+        <!-- Dynamic Pricing -->
+        <div class="card">
+            <h2>💰 Dynamic Pricing</h2>
+            <input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
+            <label><input type="checkbox" id="peak"> Peak Hour</label>
+            <label><input type="checkbox" id="exam"> Exam Week</label>
+            <button onclick="calculatePrice()">Calculate</button>
+            <div class="result" id="priceResult"></div>
+        </div>
+
+        <!-- Reward System -->
+        <div class="card">
+            <h2>🎮 Reward System</h2>
+            <select id="action">
+                <option value="10">On-Time Checkout (+10)</option>
+                <option value="5">Early Cancel (+5)</option>
+                <option value="-15">No Show (-15)</option>
+                <option value="-5">Peak Booking (-5)</option>
+            </select>
+            <button onclick="calculateCoins()">Calculate</button>
+            <div class="result" id="coinResult"></div>
+        </div>
+
+        <!-- Utilization -->
+        <div class="card">
+            <h2>📊 Utilization Analytics</h2>
+            <input type="number" id="booked" placeholder="Booked Hours">
+            <input type="number" id="total" placeholder="Total Hours">
+            <button onclick="calculateUtilization()">Calculate</button>
+            <div class="result" id="utilResult"></div>
+        </div>
+
+    </div>
 </div>
 
 <script src="script.js"></script>
