@@ -1,63 +1,167 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Smart Resource Booking – Technical Demo</title>
-    <link rel="stylesheet" href="style.css">
+<title>Smart Resource Booking – Technical Demo</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    margin: 0;
+    color: white;
+}
+
+.container {
+    padding: 40px;
+    text-align: center;
+}
+
+.subtitle {
+    opacity: 0.7;
+    margin-bottom: 40px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.result {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 18px;
+}
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
+<h1>🚀 Smart Resource Booking</h1>
+<p class="subtitle">Technical Engine Demonstration</p>
 
-    <h1>🚀 Smart Resource Booking</h1>
-    <p class="subtitle">Technical Engine Demonstration</p>
+<div class="grid">
 
-    <div class="grid">
-
-        <!-- Conflict Detection -->
-        <div class="card">
-            <h2>📅 Conflict Detection</h2>
-            <p>Existing Booking: <strong>10–12</strong></p>
-            <input type="number" id="start" placeholder="Start Hour">
-            <input type="number" id="end" placeholder="End Hour">
-            <button onclick="checkConflict()">Check</button>
-            <div class="result" id="conflictResult"></div>
-        </div>
-
-        <!-- Dynamic Pricing -->
-        <div class="card">
-            <h2>💰 Dynamic Pricing</h2>
-            <input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
-            <label><input type="checkbox" id="peak"> Peak Hour</label>
-            <label><input type="checkbox" id="exam"> Exam Week</label>
-            <button onclick="calculatePrice()">Calculate</button>
-            <div class="result" id="priceResult"></div>
-        </div>
-
-        <!-- Reward System -->
-        <div class="card">
-            <h2>🎮 Reward System</h2>
-            <select id="action">
-                <option value="10">On-Time Checkout (+10)</option>
-                <option value="5">Early Cancel (+5)</option>
-                <option value="-15">No Show (-15)</option>
-                <option value="-5">Peak Booking (-5)</option>
-            </select>
-            <button onclick="calculateCoins()">Calculate</button>
-            <div class="result" id="coinResult"></div>
-        </div>
-
-        <!-- Utilization -->
-        <div class="card">
-            <h2>📊 Utilization Analytics</h2>
-            <input type="number" id="booked" placeholder="Booked Hours">
-            <input type="number" id="total" placeholder="Total Hours">
-            <button onclick="calculateUtilization()">Calculate</button>
-            <div class="result" id="utilResult"></div>
-        </div>
-
-    </div>
+<div class="card">
+<h2>📅 Conflict Detection</h2>
+<p>Existing Booking: <strong>10–12</strong></p>
+<input type="number" id="start" placeholder="Start Hour">
+<input type="number" id="end" placeholder="End Hour">
+<button onclick="checkConflict()">Check</button>
+<div class="result" id="conflictResult"></div>
 </div>
 
-<script src="script.js"></script>
+<div class="card">
+<h2>💰 Dynamic Pricing</h2>
+<input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
+<label><input type="checkbox" id="peak"> Peak Hour</label>
+<label><input type="checkbox" id="exam"> Exam Week</label>
+<button onclick="calculatePrice()">Calculate</button>
+<div class="result" id="priceResult"></div>
+</div>
+
+<div class="card">
+<h2>🎮 Reward System</h2>
+<select id="action">
+<option value="10">On-Time Checkout (+10)</option>
+<option value="5">Early Cancel (+5)</option>
+<option value="-15">No Show (-15)</option>
+<option value="-5">Peak Booking (-5)</option>
+</select>
+<button onclick="calculateCoins()">Calculate</button>
+<div class="result" id="coinResult"></div>
+</div>
+
+<div class="card">
+<h2>📊 Utilization Analytics</h2>
+<input type="number" id="booked" placeholder="Booked Hours">
+<input type="number" id="total" placeholder="Total Hours">
+<button onclick="calculateUtilization()">Calculate</button>
+<div class="result" id="utilResult"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+function checkConflict() {
+let existingStart = 10;
+let existingEnd = 12;
+let start = parseInt(document.getElementById("start").value);
+let end = parseInt(document.getElementById("end").value);
+
+if ((start < existingEnd) && (end > existingStart)) {
+document.getElementById("conflictResult").innerHTML = "❌ Conflict Detected";
+} else {
+document.getElementById("conflictResult").innerHTML = "✅ Booking Approved";
+}
+}
+
+function calculatePrice() {
+let base = 500;
+let demand = parseFloat(document.getElementById("demand").value) || 0;
+let peak = document.getElementById("peak").checked ? 1.5 : 1;
+let exam = document.getElementById("exam").checked ? 1.8 : 1;
+
+let finalPrice = base * (1 + demand) * peak * exam;
+
+document.getElementById("priceResult").innerHTML =
+"₹ " + finalPrice.toFixed(2);
+}
+
+function calculateCoins() {
+let value = document.getElementById("action").value;
+document.getElementById("coinResult").innerHTML =
+"Coins Earned: " + value;
+}
+
+function calculateUtilization() {
+let booked = parseInt(document.getElementById("booked").value);
+let total = parseInt(document.getElementById("total").value);
+
+let rate = (booked / total) * 100;
+document.getElementById("utilResult").innerHTML =
+rate.toFixed(2) + "% Utilization";
+}
+</script>
+
 </body>
 </html>
