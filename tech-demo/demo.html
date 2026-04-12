@@ -1,250 +1,2699 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Smart Resource Booking</title>
-
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>NEXUS — Smart Resource Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg,#0f172a,#1e293b);
-    color: white;
+  :root {
+    --cyan: #00f5ff;
+    --magenta: #ff00aa;
+    --gold: #ffd700;
+    --green: #00ff88;
+    --red: #ff3355;
+    --orange: #ff6b00;
+    --bg: #010b14;
+    --surface: rgba(0,245,255,0.04);
+    --border: rgba(0,245,255,0.15);
+    --text: #c8e8f0;
+    --dim: rgba(200,232,240,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
     overflow-x: hidden;
-    animation: fadeIn 1s ease-in-out;
-}
+    cursor: none;
+  }
 
-@keyframes fadeIn {
-    from {opacity:0;}
-    to {opacity:1;}
-}
+  /* CUSTOM CURSOR */
+  #cursor {
+    position: fixed;
+    width: 20px; height: 20px;
+    border: 2px solid var(--cyan);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width 0.2s, height 0.2s, border-color 0.2s;
+    mix-blend-mode: exclusion;
+  }
+  #cursor-dot {
+    position: fixed;
+    width: 4px; height: 4px;
+    background: var(--cyan);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+  }
+  body:hover #cursor { width: 30px; height: 30px; border-color: var(--magenta); }
 
-.container {
-    padding: 40px;
-    text-align: center;
-}
+  /* MATRIX BG CANVAS */
+  #matrix-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.07;
+  }
 
-h1 {
-    font-size: 40px;
-    margin-bottom: 5px;
-}
+  /* SCANLINES */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,245,255,0.015) 2px,
+      rgba(0,245,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
 
-.subtitle {
-    opacity: 0.6;
-    margin-bottom: 50px;
-}
+  /* NOISE OVERLAY */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+  }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
-    gap: 40px;
-}
+  /* MAIN LAYOUT */
+  .app {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+  }
 
-.card {
-    background: rgba(255,255,255,0.05);
+  /* TOP HUD BAR */
+  .hud-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 30px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,245,255,0.02);
     backdrop-filter: blur(10px);
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    transition: 0.3s;
-}
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
 
-.card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-}
+  .hud-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--cyan);
+    text-shadow: 0 0 20px var(--cyan), 0 0 40px var(--cyan);
+    animation: logoGlow 2s ease-in-out infinite alternate;
+  }
 
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 12px;
-    border-radius: 10px;
-    border: none;
-}
+  @keyframes logoGlow {
+    from { text-shadow: 0 0 10px var(--cyan); }
+    to { text-shadow: 0 0 30px var(--cyan), 0 0 60px var(--cyan), 0 0 100px var(--cyan); }
+  }
 
-button {
-    margin-top: 15px;
-    padding: 12px;
-    width: 100%;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(45deg,#3b82f6,#2563eb);
-    color: white;
+  .hud-right {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .hud-stat {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    text-align: center;
+  }
+
+  .hud-stat span {
+    display: block;
+    color: var(--green);
+    font-size: 14px;
     font-weight: bold;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* HERO SECTION */
+  .hero {
+    text-align: center;
+    padding: 60px 30px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(0,245,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--magenta);
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    animation: fadeSlideIn 0.8s ease both;
+  }
+
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(32px, 6vw, 72px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--cyan) 0%, #fff 50%, var(--magenta) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeSlideIn 0.8s 0.1s ease both;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    animation: fadeSlideIn 0.8s 0.2s ease both;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ALERT TICKER */
+  .ticker-wrap {
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,245,255,0.03);
+    padding: 8px 0;
+    margin-bottom: 40px;
+  }
+
+  .ticker {
+    display: flex;
+    gap: 80px;
+    animation: ticker 25s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 30px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .nav-tab {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
     cursor: pointer;
-    transition: 0.3s;
-}
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    text-transform: uppercase;
+  }
 
-button:hover {
-    transform: scale(1.05);
-}
+  .nav-tab:hover, .nav-tab.active {
+    background: rgba(0,245,255,0.1);
+    color: var(--cyan);
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,245,255,0.2);
+  }
 
-.result {
-    margin-top: 20px;
-    font-size: 20px;
-    font-weight: bold;
-    transition: 0.3s;
-}
+  /* PAGE SECTIONS */
+  .page-section {
+    display: none;
+    padding: 0 30px 60px;
+    animation: fadeSlideIn 0.4s ease;
+  }
 
-.success { color: #22c55e; }
-.error { color: #ef4444; }
+  .page-section.active { display: block; }
 
-/* Toggle Switch */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
 
-.switch input {display:none;}
+  .section-header h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+  }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  background-color: #ccc;
-  border-radius: 34px;
-  top: 0; left: 0; right: 0; bottom: 0;
-  transition: .4s;
-}
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px; width: 18px;
-  left: 3px; bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: .4s;
-}
+  /* GRID */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+  }
 
-input:checked + .slider {
-  background-color: #3b82f6;
-}
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
 
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--cyan), transparent);
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover {
+    border-color: rgba(0,245,255,0.4);
+    box-shadow: 0 0 30px rgba(0,245,255,0.08), inset 0 0 30px rgba(0,245,255,0.02);
+    transform: translateY(-3px);
+  }
+
+  .card:hover::after { opacity: 1; }
+
+  .card.magenta::before { background: linear-gradient(180deg, var(--magenta), transparent); }
+  .card.gold::before { background: linear-gradient(180deg, var(--gold), transparent); }
+  .card.green::before { background: linear-gradient(180deg, var(--green), transparent); }
+  .card.red::before { background: linear-gradient(180deg, var(--red), transparent); }
+
+  .card-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    margin-bottom: 20px;
+  }
+
+  .card.magenta .card-title { color: var(--magenta); }
+  .card.gold .card-title { color: var(--gold); }
+  .card.green .card-title { color: var(--green); }
+  .card.red .card-title { color: var(--red); }
+
+  /* INPUTS */
+  .input-group {
+    margin-bottom: 14px;
+  }
+
+  .input-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  input[type="number"],
+  input[type="text"],
+  input[type="date"],
+  input[type="time"],
+  select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.3s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,245,255,0.15);
+    background: rgba(0,245,255,0.03);
+  }
+
+  select option { background: #0d1b26; }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .toggle-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 22px;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--dim);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: all 0.3s;
+  }
+
+  .toggle input:checked + .toggle-track {
+    background: rgba(0,245,255,0.2);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,245,255,0.3);
+  }
+
+  .toggle input:checked + .toggle-track::before {
+    background: var(--cyan);
+    transform: translateX(22px);
+  }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 12px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.3s;
+  }
+
+  .btn:hover::before { background: rgba(255,255,255,0.1); }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-cyan {
+    background: linear-gradient(135deg, #004455, #003344);
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 15px rgba(0,245,255,0.2);
+    margin-top: 16px;
+  }
+
+  .btn-cyan:hover {
+    box-shadow: 0 0 30px rgba(0,245,255,0.4);
+    background: linear-gradient(135deg, #005566, #004455);
+  }
+
+  .btn-magenta {
+    background: linear-gradient(135deg, #440033, #330022);
+    color: var(--magenta);
+    border: 1px solid var(--magenta);
+    box-shadow: 0 0 15px rgba(255,0,170,0.2);
+    margin-top: 16px;
+  }
+
+  .btn-magenta:hover {
+    box-shadow: 0 0 30px rgba(255,0,170,0.4);
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, #443300, #332200);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    box-shadow: 0 0 15px rgba(255,215,0,0.2);
+    margin-top: 16px;
+  }
+
+  .btn-green {
+    background: linear-gradient(135deg, #004422, #003319);
+    color: var(--green);
+    border: 1px solid var(--green);
+    box-shadow: 0 0 15px rgba(0,255,136,0.2);
+    margin-top: 16px;
+  }
+
+  /* RESULT BOXES */
+  .result-box {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    text-align: center;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s;
+  }
+
+  .result-success { color: var(--green); border-color: var(--green); background: rgba(0,255,136,0.05); box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+  .result-error { color: var(--red); border-color: var(--red); background: rgba(255,51,85,0.05); box-shadow: 0 0 20px rgba(255,51,85,0.1); }
+  .result-warn { color: var(--gold); border-color: var(--gold); background: rgba(255,215,0,0.05); }
+  .result-info { color: var(--cyan); border-color: var(--cyan); background: rgba(0,245,255,0.05); }
+
+  /* STAT KPI CARDS */
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0,245,255,0.3);
+  }
+
+  .kpi-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(0,245,255,0.5);
+  }
+
+  .kpi-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .kpi-delta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+
+  /* PROGRESS BAR */
+  .prog-wrap {
+    margin: 10px 0;
+  }
+
+  .prog-head {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    margin-bottom: 5px;
+  }
+
+  .prog-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    position: relative;
+  }
+
+  .prog-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    box-shadow: 0 0 10px white;
+  }
+
+  /* RESOURCE GRID */
+  .resource-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .resource-card:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.1);
+    transform: translateY(-3px);
+  }
+
+  .resource-card.selected {
+    border-color: var(--cyan);
+    background: rgba(0,245,255,0.07);
+    box-shadow: 0 0 30px rgba(0,245,255,0.15);
+  }
+
+  .resource-status {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .status-available { background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+  .status-busy { background: var(--red); box-shadow: 0 0 10px var(--red); }
+  .status-maintenance { background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: pulse 1.5s infinite; }
+
+  .resource-icon { font-size: 28px; margin-bottom: 8px; }
+  .resource-name { font-family: 'Orbitron', monospace; font-size: 13px; letter-spacing: 1px; color: var(--text); margin-bottom: 4px; }
+  .resource-info { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+  .resource-capacity { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--cyan); margin-top: 6px; }
+
+  /* TIMELINE */
+  .timeline {
+    position: relative;
+    padding-left: 24px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, var(--cyan), transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    animation: fadeSlideIn 0.5s ease both;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 6px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  .timeline-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--magenta);
+    letter-spacing: 2px;
+  }
+
+  .timeline-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .timeline-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+  }
+
+  /* COIN ANIMATION */
+  .coin-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 36px;
+    font-weight: 900;
+    text-align: center;
+    padding: 20px;
+    animation: countUp 1s ease;
+  }
+
+  @keyframes countUp {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* CHART CONTAINERS */
+  .chart-box {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  canvas { max-width: 100%; }
+
+  /* NOTIFICATION BELL */
+  .notif-btn {
+    position: relative;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 8px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+
+  .notif-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  .notif-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: var(--red);
+    color: white;
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 1s infinite;
+  }
+
+  /* NOTIFICATIONS PANEL */
+  .notif-panel {
+    position: fixed;
+    top: 60px; right: 20px;
+    width: 320px;
+    background: #0a1a28;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    z-index: 200;
+    display: none;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    animation: fadeSlideIn 0.3s ease;
+  }
+
+  .notif-panel.show { display: block; }
+
+  .notif-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .notif-item {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s;
+  }
+
+  .notif-item:hover { background: rgba(0,245,255,0.03); }
+
+  .notif-msg {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .notif-ts {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 2px;
+  }
+
+  /* GAUGE */
+  .gauge-wrap {
+    position: relative;
+    width: 160px;
+    height: 80px;
+    margin: 0 auto 10px;
+  }
+
+  .gauge-svg { width: 100%; height: 100%; }
+
+  .gauge-val {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cyan);
+    text-shadow: 0 0 15px var(--cyan);
+  }
+
+  /* BOOKING RECEIPT */
+  .receipt {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .receipt.show { display: block; animation: fadeSlideIn 0.4s ease; }
+
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed rgba(255,255,255,0.05);
+  }
+
+  .receipt-row:last-child { border: none; }
+
+  .receipt-row .val { color: var(--cyan); }
+
+  /* SLIDER */
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    outline: none;
+    border: none;
+    margin: 8px 0;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--cyan);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  /* AI PULSE */
+  .ai-thinking {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+  }
+
+  .ai-thinking.show { display: block; }
+
+  .ai-dots span {
+    animation: blink 1.2s infinite;
+    font-size: 18px;
+  }
+
+  .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%,80%,100% { opacity: 0.2; }
+    40% { opacity: 1; }
+  }
+
+  /* LEADERBOARD */
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.2s;
+  }
+
+  .leaderboard-row:hover { background: rgba(0,245,255,0.03); padding-left: 8px; }
+
+  .lb-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    width: 28px;
+    text-align: center;
+    color: var(--dim);
+  }
+
+  .lb-rank.gold-rank { color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+  .lb-rank.silver-rank { color: #aaa; }
+  .lb-rank.bronze-rank { color: #cd7f32; }
+
+  .lb-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .lb-name {
+    flex: 1;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .lb-coins {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--gold);
+  }
+
+  /* FLOOR MAP */
+  .floor-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .floor-cell {
+    aspect-ratio: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--dim);
+    text-align: center;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .floor-cell:hover { border-color: var(--cyan); transform: scale(1.05); }
+
+  .floor-cell.room-available { border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.05); color: var(--green); }
+  .floor-cell.room-booked { border-color: rgba(255,51,85,0.3); background: rgba(255,51,85,0.05); color: var(--red); }
+  .floor-cell.room-maintenance { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.05); color: var(--gold); }
+
+  /* WEATHER WIDGET */
+  .weather-card {
+    background: linear-gradient(135deg, rgba(0,245,255,0.05), rgba(255,0,170,0.05));
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  /* MINI CALENDAR */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .cal-day-header {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    text-align: center;
+    padding: 4px;
+    letter-spacing: 1px;
+  }
+
+  .cal-day {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--dim);
+  }
+
+  .cal-day:hover { background: rgba(0,245,255,0.1); color: var(--cyan); }
+  .cal-day.today { background: rgba(0,245,255,0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+  .cal-day.has-booking { color: var(--gold); }
+  .cal-day.booked-full { color: var(--red); }
+  .cal-day.empty { pointer-events: none; }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toast {
+    padding: 14px 20px;
+    background: #0a1a28;
+    border-left: 3px solid var(--cyan);
+    border-radius: 0 4px 4px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    animation: toastIn 0.4s ease, toastOut 0.4s ease 3s forwards;
+    min-width: 280px;
+  }
+
+  .toast.error { border-color: var(--red); }
+  .toast.success { border-color: var(--green); }
+  .toast.warn { border-color: var(--gold); }
+
+  @keyframes toastIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes toastOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+  }
+
+  /* RIPPLE */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0,245,255,0.3);
+    transform: scale(0);
+    animation: rippleAnim 0.6s linear;
+    pointer-events: none;
+  }
+
+  @keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* RADAR */
+  .radar-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+  }
+
+  .radar-svg { width: 100%; height: 100%; animation: radarSpin 4s linear infinite; }
+
+  @keyframes radarSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .hud-bar { padding: 10px 15px; }
+    .hero { padding: 40px 15px 30px; }
+    .page-section { padding: 0 15px 40px; }
+    .nav-tabs { gap: 4px; }
+    .nav-tab { padding: 8px 12px; font-size: 10px; }
+    .floor-grid { grid-template-columns: repeat(4, 1fr); }
+  }
 </style>
-
 </head>
-
 <body>
 
-<div class="container">
-<h1>🚀 Smart Resource Booking</h1>
-<p class="subtitle">Next-Gen Technical Engine Demo</p>
+<canvas id="matrix-bg"></canvas>
 
-<div class="grid">
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
 
-<div class="card">
-<h2>📅 Conflict Detection</h2>
-<p>Existing Booking: <b>10–12</b></p>
-<input type="number" id="start" placeholder="Start Hour">
-<input type="number" id="end" placeholder="End Hour">
-<button onclick="checkConflict()">Check</button>
-<div class="result" id="conflictResult"></div>
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header">⚡ SYSTEM ALERTS</div>
+  <div id="notifList"></div>
 </div>
 
-<div class="card">
-<h2>💰 Dynamic Pricing</h2>
-<input type="number" id="demand" step="0.1" placeholder="Demand (0–1)">
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
 
-<div style="margin-top:15px;">
-Peak Hour
-<label class="switch">
-<input type="checkbox" id="peak">
-<span class="slider"></span>
-</label>
-</div>
+<div class="app">
+  <!-- HUD BAR -->
+  <div class="hud-bar">
+    <div class="hud-logo">NEXUS</div>
+    <div class="hud-right">
+      <div class="hud-stat"><span id="liveTime">--:--:--</span>SYSTEM TIME</div>
+      <div class="hud-stat"><span id="liveUtil">74%</span>UTILIZATION</div>
+      <div class="hud-stat"><span style="color:var(--green)">ONLINE</span>STATUS</div>
+      <div class="live-dot"></div>
+      <button class="notif-btn" onclick="toggleNotif()" id="notifBtn">
+        🔔
+        <div class="notif-badge" id="notifCount">3</div>
+      </button>
+    </div>
+  </div>
 
-<div style="margin-top:15px;">
-Exam Week
-<label class="switch">
-<input type="checkbox" id="exam">
-<span class="slider"></span>
-</label>
-</div>
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker">
+      <span class="ticker-item">⚡ ROOM A-201 BOOKED — 14:00–16:00</span>
+      <span class="ticker-item">🟢 LAB-3 AVAILABLE — 2 SLOTS OPEN</span>
+      <span class="ticker-item">🔴 CONFLICT DETECTED — SEMINAR HALL B</span>
+      <span class="ticker-item">💰 PEAK PRICING ACTIVE — 18:00–20:00</span>
+      <span class="ticker-item">🏆 VATSAL SHARMA — TOP PERFORMER THIS WEEK</span>
+      <span class="ticker-item">🤖 AI FORECAST: 89% UTILIZATION PREDICTED FRIDAY</span>
+      <span class="ticker-item">⚠️ MAINTENANCE: ROOM C-104 — 09:00–11:00 TOMORROW</span>
+      <span class="ticker-item">⚡ ROOM A-201 BOOKED — 14:00–16:00</span>
+      <span class="ticker-item">🟢 LAB-3 AVAILABLE — 2 SLOTS OPEN</span>
+      <span class="ticker-item">🔴 CONFLICT DETECTED — SEMINAR HALL B</span>
+      <span class="ticker-item">💰 PEAK PRICING ACTIVE — 18:00–20:00</span>
+      <span class="ticker-item">🏆 VATSAL SHARMA — TOP PERFORMER THIS WEEK</span>
+      <span class="ticker-item">🤖 AI FORECAST: 89% UTILIZATION PREDICTED FRIDAY</span>
+      <span class="ticker-item">⚠️ MAINTENANCE: ROOM C-104 — 09:00–11:00 TOMORROW</span>
+    </div>
+  </div>
 
-<button onclick="calculatePrice()">Calculate</button>
-<div class="result" id="priceResult"></div>
-</div>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="hero-tag">▸ MANIPAL UNIVERSITY JAIPUR · PBL-2 · 2025–26</div>
+    <h1 class="hero-title">SMART RESOURCE<br>COMMAND CENTER</h1>
+    <p class="hero-sub">NEXT-GEN BOOKING ENGINE · VATSAL SHARMA · 2427030235</p>
+  </div>
 
-<div class="card">
-<h2>🎮 Reward System</h2>
-<select id="action">
-<option value="10">On-Time Checkout</option>
-<option value="5">Early Cancel</option>
-<option value="-15">No Show</option>
-<option value="-5">Peak Booking</option>
-</select>
-<button onclick="calculateCoins()">Calculate</button>
-<div class="result" id="coinResult"></div>
-</div>
+  <!-- KPI ROW -->
+  <div style="padding: 0 30px; margin-bottom: 40px;">
+    <div class="grid-4">
+      <div class="kpi-card">
+        <div class="kpi-icon">🏢</div>
+        <div class="kpi-value" id="kpi1">24</div>
+        <div class="kpi-label">Total Resources</div>
+        <div class="kpi-delta">↑ 3 this month</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-value" id="kpi2">142</div>
+        <div class="kpi-label">Bookings Today</div>
+        <div class="kpi-delta" style="color:var(--cyan)">↑ 12% vs yesterday</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">⚡</div>
+        <div class="kpi-value" id="kpi3" style="color:var(--magenta)">3</div>
+        <div class="kpi-label">Active Conflicts</div>
+        <div class="kpi-delta" style="color:var(--red)">↑ requires attention</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🏆</div>
+        <div class="kpi-value" id="kpi4" style="color:var(--gold)">2840</div>
+        <div class="kpi-label">Coins Distributed</div>
+        <div class="kpi-delta">↑ Reward program active</div>
+      </div>
+    </div>
+  </div>
 
-<div class="card">
-<h2>📊 Utilization Analytics</h2>
-<input type="number" id="booked" placeholder="Booked Hours">
-<input type="number" id="total" placeholder="Total Hours">
-<button onclick="calculateUtilization()">Calculate</button>
-<div class="result" id="utilResult"></div>
-</div>
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('booking')">📅 BOOKING</button>
+    <button class="nav-tab" onclick="switchTab('engine')">⚙️ ENGINE</button>
+    <button class="nav-tab" onclick="switchTab('analytics')">📊 ANALYTICS</button>
+    <button class="nav-tab" onclick="switchTab('floor')">🗺️ FLOOR MAP</button>
+    <button class="nav-tab" onclick="switchTab('rewards')">🏆 REWARDS</button>
+    <button class="nav-tab" onclick="switchTab('ai')">🤖 AI ASSIST</button>
+    <button class="nav-tab" onclick="switchTab('log')">📋 ACTIVITY LOG</button>
+  </div>
 
-</div>
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: BOOKING -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section active" id="tab-booking">
+    <div class="section-header">
+      <h2>RESOURCE BOOKING</h2>
+      <div class="section-line"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;">SELECT · VALIDATE · CONFIRM</span>
+    </div>
+
+    <!-- RESOURCE PICKER -->
+    <div style="margin-bottom:30px;">
+      <div class="card-label" style="margin-bottom:14px;">SELECT RESOURCE</div>
+      <div class="grid-3" id="resourceGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- BOOKING FORM -->
+      <div class="card">
+        <div class="card-label">BOOKING MODULE</div>
+        <div class="card-title">SUBMIT REQUEST</div>
+
+        <div class="input-group">
+          <label class="input-label">YOUR NAME</label>
+          <input type="text" id="bkName" placeholder="e.g. Vatsal Sharma">
+        </div>
+        <div class="input-group">
+          <label class="input-label">BOOKING DATE</label>
+          <input type="date" id="bkDate">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="input-group">
+            <label class="input-label">START TIME</label>
+            <input type="time" id="bkStart">
+          </div>
+          <div class="input-group">
+            <label class="input-label">END TIME</label>
+            <input type="time" id="bkEnd">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">PURPOSE</label>
+          <select id="bkPurpose">
+            <option value="lecture">Lecture / Class</option>
+            <option value="meeting">Team Meeting</option>
+            <option value="exam">Examination</option>
+            <option value="lab">Lab Session</option>
+            <option value="workshop">Workshop</option>
+            <option value="event">Special Event</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">ATTENDEES: <span id="attendeeVal" style="color:var(--cyan)">20</span></label>
+          <input type="range" id="attendees" min="1" max="100" value="20" oninput="document.getElementById('attendeeVal').textContent=this.value">
+        </div>
+
+        <button class="btn btn-cyan" onclick="submitBooking()">⚡ SUBMIT BOOKING REQUEST</button>
+
+        <div class="receipt" id="receipt">
+          <div style="text-align:center;color:var(--cyan);letter-spacing:3px;font-family:'Orbitron',monospace;font-size:12px;margin-bottom:12px;">▸ BOOKING CONFIRMATION ◂</div>
+          <div class="receipt-row"><span>BOOKING ID</span><span class="val" id="r-id">—</span></div>
+          <div class="receipt-row"><span>RESOURCE</span><span class="val" id="r-res">—</span></div>
+          <div class="receipt-row"><span>DATE</span><span class="val" id="r-date">—</span></div>
+          <div class="receipt-row"><span>TIME SLOT</span><span class="val" id="r-time">—</span></div>
+          <div class="receipt-row"><span>ATTENDEES</span><span class="val" id="r-att">—</span></div>
+          <div class="receipt-row"><span>PURPOSE</span><span class="val" id="r-purpose">—</span></div>
+          <div class="receipt-row"><span>STATUS</span><span class="val" style="color:var(--green)">✓ CONFIRMED</span></div>
+        </div>
+      </div>
+
+      <!-- MINI CALENDAR + UPCOMING -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card green">
+          <div class="card-label">BOOKING CALENDAR</div>
+          <div class="card-title">APRIL 2026</div>
+          <div class="cal-grid" id="miniCal"></div>
+        </div>
+
+        <div class="card magenta">
+          <div class="card-label">UPCOMING BOOKINGS</div>
+          <div class="card-title">SCHEDULE VIEW</div>
+          <div class="timeline" id="upcomingList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: ENGINE -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-engine">
+    <div class="section-header">
+      <h2>TECHNICAL ENGINE</h2>
+      <div class="section-line"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;">CONFLICT · PRICING · REWARDS · UTILIZATION</span>
+    </div>
+
+    <div class="grid-2">
+      <!-- CONFLICT DETECTION -->
+      <div class="card">
+        <div class="card-label">MODULE 01</div>
+        <div class="card-title">CONFLICT DETECTION ENGINE</div>
+        <p style="font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.6;">
+          Existing booking locked: <span style="color:var(--magenta);font-family:'Share Tech Mono',monospace;">10:00 – 12:00</span>. Enter a new slot to run conflict scan.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="input-group">
+            <label class="input-label">START HOUR (0–23)</label>
+            <input type="number" id="start" min="0" max="23" placeholder="e.g. 9">
+          </div>
+          <div class="input-group">
+            <label class="input-label">END HOUR (0–23)</label>
+            <input type="number" id="end" min="0" max="23" placeholder="e.g. 14">
+          </div>
+        </div>
+
+        <!-- VISUAL TIMELINE -->
+        <div style="margin:16px 0;position:relative;height:36px;background:rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;border:1px solid var(--border);">
+          <div style="position:absolute;left:41.6%;width:8.4%;height:100%;background:rgba(255,0,170,0.3);border:1px solid var(--magenta);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--magenta);">10–12</div>
+          <div id="newSlotViz" style="position:absolute;height:100%;background:rgba(0,245,255,0.2);border:1px solid var(--cyan);transition:all 0.4s;display:none;"></div>
+          <div style="position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:space-between;padding:0 4px;font-size:8px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.3);">
+            <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
+          </div>
+        </div>
+
+        <button class="btn btn-cyan" onclick="checkConflict()">⚡ RUN CONFLICT SCAN</button>
+        <div class="result-box" id="conflictResult">AWAITING INPUT...</div>
+      </div>
+
+      <!-- DYNAMIC PRICING -->
+      <div class="card gold">
+        <div class="card-label">MODULE 02</div>
+        <div class="card-title">DYNAMIC PRICING ENGINE</div>
+        <p style="font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.6;">
+          Base rate: <span style="color:var(--gold);font-family:'Share Tech Mono',monospace;">₹500</span>. Adjust demand and modifiers below.
+        </p>
+
+        <div class="input-group">
+          <label class="input-label">DEMAND FACTOR: <span id="demandVal" style="color:var(--gold)">0.5</span></label>
+          <input type="range" id="demand" min="0" max="1" step="0.01" value="0.5" oninput="document.getElementById('demandVal').textContent=parseFloat(this.value).toFixed(2);livePrice()">
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-label">PEAK HOURS (×1.5)</span>
+          <label class="toggle">
+            <input type="checkbox" id="peak" onchange="livePrice()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">EXAM WEEK (×1.8)</span>
+          <label class="toggle">
+            <input type="checkbox" id="exam" onchange="livePrice()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">WEEKEND SURCHARGE (×1.2)</span>
+          <label class="toggle">
+            <input type="checkbox" id="weekend" onchange="livePrice()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">EARLY BIRD DISCOUNT (−15%)</span>
+          <label class="toggle">
+            <input type="checkbox" id="earlybird" onchange="livePrice()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+
+        <button class="btn btn-gold" onclick="calculatePrice()">💰 CALCULATE FINAL PRICE</button>
+        <div class="result-box result-info" id="priceResult" style="font-size:26px;font-family:'Orbitron',monospace;color:var(--gold);border-color:var(--gold);">₹ —</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;margin-top:8px;" id="priceBreakdown"></div>
+      </div>
+
+      <!-- REWARD SYSTEM -->
+      <div class="card magenta">
+        <div class="card-label">MODULE 03</div>
+        <div class="card-title">GAMIFIED REWARD ENGINE</div>
+
+        <div class="input-group">
+          <label class="input-label">USER ACTION</label>
+          <select id="action">
+            <option value="10">On-Time Checkout</option>
+            <option value="5">Early Cancellation</option>
+            <option value="-15">No-Show Penalty</option>
+            <option value="-5">Peak Hour Booking</option>
+            <option value="20">Perfect Booking Record</option>
+            <option value="15">Off-Peak Champion</option>
+            <option value="-10">Late Return</option>
+            <option value="8">Feedback Submitted</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">STREAK MULTIPLIER</label>
+          <select id="streak">
+            <option value="1">No Streak (×1)</option>
+            <option value="1.5">3-Day Streak (×1.5)</option>
+            <option value="2">7-Day Streak (×2)</option>
+            <option value="3">30-Day Streak (×3)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">CURRENT COIN BALANCE</label>
+          <input type="number" id="currentCoins" value="150" placeholder="Current balance">
+        </div>
+
+        <button class="btn btn-magenta" onclick="calculateCoins()">🏆 PROCESS REWARD</button>
+
+        <div id="coinDisplay" style="display:none;text-align:center;margin-top:16px;">
+          <div class="coin-display" id="coinResult" style="color:var(--gold);"></div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);" id="coinBreakdown"></div>
+        </div>
+      </div>
+
+      <!-- UTILIZATION -->
+      <div class="card green">
+        <div class="card-label">MODULE 04</div>
+        <div class="card-title">UTILIZATION ANALYTICS</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="input-group">
+            <label class="input-label">BOOKED HOURS</label>
+            <input type="number" id="booked" placeholder="e.g. 18" min="0">
+          </div>
+          <div class="input-group">
+            <label class="input-label">TOTAL AVAILABLE HOURS</label>
+            <input type="number" id="total" placeholder="e.g. 24" min="1">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">RESOURCE TYPE</label>
+          <select id="resType">
+            <option>Classroom</option>
+            <option>Laboratory</option>
+            <option>Conference Room</option>
+            <option>Auditorium</option>
+            <option>Sports Facility</option>
+          </select>
+        </div>
+
+        <button class="btn btn-green" onclick="calculateUtilization()">📊 ANALYZE UTILIZATION</button>
+
+        <div id="utilResult" class="result-box" style="margin-top:16px;">AWAITING DATA...</div>
+
+        <!-- GAUGE -->
+        <div class="gauge-wrap" id="gaugeWrap" style="display:none;margin-top:16px;">
+          <svg class="gauge-svg" viewBox="0 0 160 80" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round"/>
+            <path id="gaugePath" d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220" style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"/>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00ff88"/>
+                <stop offset="50%" stop-color="#00f5ff"/>
+                <stop offset="100%" stop-color="#ff00aa"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-val" id="gaugeVal">0%</div>
+        </div>
+
+        <!-- RESOURCE COMPARISON BARS -->
+        <div id="utilBars" style="display:none;margin-top:16px;">
+          <div class="card-label" style="margin-bottom:10px;">BENCHMARKS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: ANALYTICS -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-analytics">
+    <div class="section-header">
+      <h2>ANALYTICS DASHBOARD</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-label">WEEKLY BOOKING TRENDS</div>
+        <div class="card-title">THIS WEEK VS LAST WEEK</div>
+        <div class="chart-box">
+          <canvas id="weekChart" height="200"></canvas>
+        </div>
+      </div>
+      <div class="card magenta">
+        <div class="card-label">RESOURCE UTILIZATION</div>
+        <div class="card-title">BY CATEGORY</div>
+        <div class="chart-box">
+          <canvas id="donutChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card gold">
+        <div class="card-label">HOURLY DEMAND HEATMAP</div>
+        <div class="card-title">PEAK USAGE HOURS</div>
+        <div class="chart-box">
+          <canvas id="heatChart" height="180"></canvas>
+        </div>
+      </div>
+      <div class="card green">
+        <div class="card-label">PRICING TREND</div>
+        <div class="card-title">30-DAY REVENUE</div>
+        <div class="chart-box">
+          <canvas id="revenueChart" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESOURCE BREAKDOWN -->
+    <div class="card">
+      <div class="card-label">RESOURCE PERFORMANCE MATRIX</div>
+      <div class="card-title">ALL RESOURCES — LIVE STATUS</div>
+      <div style="margin-top:16px;" id="perfMatrix"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: FLOOR MAP -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-floor">
+    <div class="section-header">
+      <h2>INTERACTIVE FLOOR MAP</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">FLOOR SELECTOR</div>
+        <div class="card-title">BUILDING A — GROUND FLOOR</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-cyan" style="width:auto;padding:6px 14px;font-size:10px;margin:0;" onclick="selectFloor(1)">FLOOR 1</button>
+          <button class="btn btn-magenta" style="width:auto;padding:6px 14px;font-size:10px;margin:0;" onclick="selectFloor(2)">FLOOR 2</button>
+          <button class="btn btn-gold" style="width:auto;padding:6px 14px;font-size:10px;margin:0;" onclick="selectFloor(3)">FLOOR 3</button>
+          <button class="btn btn-green" style="width:auto;padding:6px 14px;font-size:10px;margin:0;" onclick="selectFloor(4)">FLOOR 4</button>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green);"></div> AVAILABLE
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red);"></div> BOOKED
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold);">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);"></div> MAINTENANCE
+          </div>
+        </div>
+
+        <div class="floor-grid" id="floorGrid"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card magenta">
+          <div class="card-label">SELECTED ROOM</div>
+          <div class="card-title" id="selectedRoomName">SELECT A ROOM</div>
+          <div id="selectedRoomInfo" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);line-height:2;">
+            Click any room on the floor map to view details and quick-book.
+          </div>
+        </div>
+
+        <div class="card gold">
+          <div class="card-label">RADAR SCAN</div>
+          <div class="card-title">LIVE OCCUPANCY RADAR</div>
+          <div class="radar-wrap">
+            <svg class="radar-svg" viewBox="0 0 180 180">
+              <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(0,245,255,0.05)" stroke-width="1"/>
+              <circle cx="90" cy="90" r="60" fill="none" stroke="rgba(0,245,255,0.06)" stroke-width="1"/>
+              <circle cx="90" cy="90" r="40" fill="none" stroke="rgba(0,245,255,0.08)" stroke-width="1"/>
+              <circle cx="90" cy="90" r="20" fill="none" stroke="rgba(0,245,255,0.1)" stroke-width="1"/>
+              <line x1="90" y1="10" x2="90" y2="170" stroke="rgba(0,245,255,0.05)" stroke-width="1"/>
+              <line x1="10" y1="90" x2="170" y2="90" stroke="rgba(0,245,255,0.05)" stroke-width="1"/>
+              <path d="M90 90 L90 10 A80 80 0 0 1 170 90 Z" fill="url(#radarSweep)" opacity="0.6"/>
+              <defs>
+                <linearGradient id="radarSweep" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="transparent"/>
+                  <stop offset="100%" stop-color="#00f5ff" stop-opacity="0.3"/>
+                </linearGradient>
+              </defs>
+              <circle cx="45" cy="55" r="4" fill="var(--green)" opacity="0.8"/>
+              <circle cx="130" cy="70" r="4" fill="var(--red)" opacity="0.8"/>
+              <circle cx="80" cy="130" r="4" fill="var(--gold)" opacity="0.8"/>
+              <circle cx="150" cy="130" r="4" fill="var(--green)" opacity="0.8"/>
+              <circle cx="60" cy="110" r="4" fill="var(--red)" opacity="0.8"/>
+            </svg>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;letter-spacing:2px;">SCANNING OCCUPANCY...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: REWARDS -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-rewards">
+    <div class="section-header">
+      <h2>REWARDS & LEADERBOARD</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card gold">
+        <div class="card-label">YOUR PROFILE</div>
+        <div class="card-title">VATSAL SHARMA</div>
+
+        <div style="text-align:center;margin:20px 0;">
+          <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px;">👤</div>
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--gold);text-shadow:0 0 20px var(--gold);">1,240</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;">NEXUS COINS</div>
+        </div>
+
+        <div class="prog-wrap">
+          <div class="prog-head"><span>LEVEL 5 → LEVEL 6</span><span style="color:var(--gold);">1,240 / 2,000</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:62%;background:linear-gradient(90deg,var(--gold),var(--orange));"></div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;text-align:center;">
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px;padding:10px;">
+            <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--cyan);">42</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);">BOOKINGS</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px;padding:10px;">
+            <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--green);">7</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);">DAY STREAK</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px;padding:10px;">
+            <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--magenta);">98%</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);">RELIABILITY</div>
+          </div>
+        </div>
+
+        <!-- BADGES -->
+        <div class="card-label" style="margin:16px 0 10px;">BADGES EARNED</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--gold);border-radius:20px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold);">🏆 TOP BOOKER</div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--cyan);border-radius:20px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);">⚡ STREAK MASTER</div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--green);border-radius:20px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);">♻️ OFF-PEAK HERO</div>
+          <div style="background:rgba(0,0,0,0.3);border:1px solid var(--magenta);border-radius:20px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--magenta);">📅 PLANNER PRO</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">GLOBAL RANKINGS</div>
+        <div class="card-title">TOP PERFORMERS</div>
+        <div id="leaderboard"></div>
+
+        <div class="card-label" style="margin-top:20px;margin-bottom:10px;">COIN HISTORY</div>
+        <div class="chart-box">
+          <canvas id="coinHistChart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: AI ASSIST -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-ai">
+    <div class="section-header">
+      <h2>AI ASSIST ENGINE</h2>
+      <div class="section-line"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;">POWERED BY NEXUS-AI</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">SMART RECOMMENDATIONS</div>
+        <div class="card-title">AI BOOKING OPTIMIZER</div>
+        <p style="font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.6;">
+          Describe your requirement and our AI engine will suggest the optimal resource, time, and pricing.
+        </p>
+
+        <div class="input-group">
+          <label class="input-label">REQUIREMENT TYPE</label>
+          <select id="aiReqType">
+            <option>Lecture for 60 students</option>
+            <option>Small group meeting (10 people)</option>
+            <option>Computer lab session</option>
+            <option>Seminar / Conference</option>
+            <option>Sports / Recreation</option>
+            <option>Examination hall</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">PREFERRED TIME BLOCK</label>
+          <select id="aiTime">
+            <option>Morning (8am–12pm)</option>
+            <option>Afternoon (12pm–5pm)</option>
+            <option>Evening (5pm–9pm)</option>
+            <option>No preference</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">PRIORITY</label>
+          <select id="aiPriority">
+            <option>Cost Efficiency</option>
+            <option>Best Availability</option>
+            <option>Proximity / Location</option>
+            <option>Minimum Conflicts</option>
+          </select>
+        </div>
+
+        <button class="btn btn-cyan" onclick="runAI()">🤖 GENERATE AI RECOMMENDATION</button>
+
+        <div class="ai-thinking" id="aiThinking">
+          NEXUS-AI ANALYZING
+          <div class="ai-dots" style="margin-top:8px;">
+            <span>●</span><span>●</span><span>●</span>
+          </div>
+        </div>
+
+        <div id="aiOutput" style="display:none;margin-top:16px;"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card magenta">
+          <div class="card-label">DEMAND FORECAST</div>
+          <div class="card-title">AI PREDICTION — NEXT 7 DAYS</div>
+          <div class="chart-box">
+            <canvas id="forecastChart" height="180"></canvas>
+          </div>
+        </div>
+
+        <div class="card green">
+          <div class="card-label">OPTIMIZATION TIPS</div>
+          <div class="card-title">SMART INSIGHTS</div>
+          <div class="timeline" id="aiTips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB: ACTIVITY LOG -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="page-section" id="tab-log">
+    <div class="section-header">
+      <h2>SYSTEM ACTIVITY LOG</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">LIVE SYSTEM LOG</div>
+        <div class="card-title">REAL-TIME EVENTS</div>
+        <div id="activityLog" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="card magenta">
+        <div class="card-label">SYSTEM HEALTH</div>
+        <div class="card-title">INFRASTRUCTURE STATUS</div>
+
+        <div style="margin-top:8px;">
+          <div class="prog-wrap">
+            <div class="prog-head"><span>BOOKING ENGINE</span><span style="color:var(--green)">99.9% UPTIME</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:99%;background:linear-gradient(90deg,var(--green),var(--cyan));"></div></div>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-head"><span>CONFLICT DETECTOR</span><span style="color:var(--green)">OPERATIONAL</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:94%;background:linear-gradient(90deg,var(--green),var(--cyan));"></div></div>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-head"><span>AI ENGINE</span><span style="color:var(--gold)">TRAINING...</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:78%;background:linear-gradient(90deg,var(--gold),var(--orange));"></div></div>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-head"><span>DATABASE SYNC</span><span style="color:var(--green)">LIVE</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:100%;"></div></div>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-head"><span>NOTIFICATION SERVICE</span><span style="color:var(--green)">ACTIVE</span></div>
+            <div class="prog-bar"><div class="prog-fill" style="width:96%;background:linear-gradient(90deg,var(--green),var(--cyan));"></div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div class="card-label" style="margin-bottom:12px;">QUICK ACTIONS</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn btn-cyan" style="margin:0;font-size:10px;" onclick="exportLog()">📥 EXPORT ACTIVITY LOG</button>
+            <button class="btn btn-magenta" style="margin:0;font-size:10px;" onclick="clearConflicts()">🔧 RESOLVE ALL CONFLICTS</button>
+            <button class="btn btn-gold" style="margin:0;font-size:10px;" onclick="generateReport()">📊 GENERATE FULL REPORT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>NEXUS COMMAND CENTER v3.0 // SMART RESOURCE BOOKING & MANAGEMENT SYSTEM</span>
+    <span>VATSAL SHARMA · 2427030235 · MUJ · CSE IV SEM · PBL-2</span>
+    <span id="footerTime"></span>
+  </div>
 </div>
 
 <script>
-function checkConflict(){
-let s=parseInt(start.value);
-let e=parseInt(end.value);
-let r=document.getElementById("conflictResult");
+// ═══════════════════════════════════════════════════════
+// CURSOR
+// ═══════════════════════════════════════════════════════
+const cursor = document.getElementById('cursor');
+const cursorDot = document.getElementById('cursor-dot');
+let mx=0, my=0, cx=0, cy=0;
 
-if((s<12)&&(e>10)){
-r.innerHTML="❌ Conflict Detected";
-r.className="result error";
-}else{
-r.innerHTML="✅ Booking Approved";
-r.className="result success";
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursorDot.style.left = mx+'px'; cursorDot.style.top = my+'px'; });
+
+(function animCursor(){
+  cx += (mx - cx) * 0.12;
+  cy += (my - cy) * 0.12;
+  cursor.style.left = cx+'px'; cursor.style.top = cy+'px';
+  requestAnimationFrame(animCursor);
+})();
+
+document.querySelectorAll('button, .nav-tab, .resource-card, .floor-cell, .leaderboard-row').forEach(el => {
+  el.addEventListener('click', e => {
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+    const rect = el.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    el.style.position = 'relative';
+    el.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// MATRIX BACKGROUND
+// ═══════════════════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('matrix-bg');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+  const cols = Math.floor(canvas.width / 20);
+  const drops = Array(cols).fill(0);
+  const chars = '01アイウエオカキクケコNEXUS2427030235ヴォABCDEFボーキング';
+
+  function draw() {
+    ctx.fillStyle = 'rgba(1,11,20,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = '12px Share Tech Mono';
+    drops.forEach((y, i) => {
+      const c = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(c, i * 20, y * 20);
+      if (y * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }
+
+  setInterval(draw, 60);
+})();
+
+// ═══════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const t = now.toTimeString().split(' ')[0];
+  document.getElementById('liveTime').textContent = t;
+  document.getElementById('footerTime').textContent = now.toDateString() + ' · ' + t;
 }
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════════════
+// KPI COUNTER ANIMATION
+// ═══════════════════════════════════════════════════════
+function animateKPI(id, target, prefix='', suffix='') {
+  let current = 0;
+  const step = target / 40;
+  const el = document.getElementById(id);
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = prefix + Math.round(current) + suffix;
+    if (current >= target) clearInterval(interval);
+  }, 30);
+}
+setTimeout(() => {
+  animateKPI('kpi1', 24); animateKPI('kpi2', 142);
+  animateKPI('kpi3', 3); animateKPI('kpi4', 2840);
+}, 500);
+
+// Animate utilization
+let util = 74;
+setInterval(() => {
+  util = Math.max(60, Math.min(95, util + (Math.random() - 0.5) * 3));
+  document.getElementById('liveUtil').textContent = util.toFixed(0) + '%';
+}, 3000);
+
+// ═══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+
+  if (id === 'analytics') initCharts();
+  if (id === 'rewards') initRewards();
+  if (id === 'ai') initAI();
+  if (id === 'floor') initFloor();
+  if (id === 'log') initLog();
 }
 
-function calculatePrice(){
-let base=500;
-let d=parseFloat(demand.value)||0;
-let p=peak.checked?1.5:1;
-let ex=exam.checked?1.8:1;
-let final=base*(1+d)*p*ex;
+// ═══════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════
+const notifications = [
+  { msg: '⚡ CONFLICT DETECTED: Seminar Hall B — overlap at 14:00', ts: '2 min ago', type: 'error' },
+  { msg: '🏆 NEW ACHIEVEMENT: "Off-Peak Champion" badge earned', ts: '15 min ago', type: 'success' },
+  { msg: '💰 PEAK PRICING ACTIVE: ×1.5 surcharge from 18:00–20:00', ts: '1 hr ago', type: 'warn' },
+  { msg: '🤖 AI FORECAST: High demand expected tomorrow (89%)', ts: '2 hr ago', type: 'info' },
+];
 
-let r=document.getElementById("priceResult");
-let count=0;
-let interval=setInterval(()=>{
-count+=final/20;
-if(count>=final){
-count=final;
-clearInterval(interval);
-}
-r.innerHTML="₹ "+count.toFixed(0);
-r.className="result success";
-},30);
-}
-
-function calculateCoins(){
-let val=action.value;
-let r=document.getElementById("coinResult");
-r.innerHTML="Coins Earned: "+val;
-r.className="result success";
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item">
+      <div class="notif-msg">${n.msg}</div>
+      <div class="notif-ts">${n.ts}</div>
+    </div>
+  `).join('');
 }
 
-function calculateUtilization(){
-let b=parseInt(booked.value);
-let t=parseInt(total.value);
-let r=document.getElementById("utilResult");
-let rate=(b/t)*100;
-r.innerHTML=rate.toFixed(2)+"% Utilization";
-r.className="result success";
+function toggleNotif() {
+  const panel = document.getElementById('notifPanel');
+  panel.classList.toggle('show');
+  if (panel.classList.contains('show')) {
+    renderNotifs();
+    document.getElementById('notifCount').style.display = 'none';
+  }
 }
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#notifPanel') && !e.target.closest('#notifBtn')) {
+    document.getElementById('notifPanel').classList.remove('show');
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════
+// RESOURCES
+// ═══════════════════════════════════════════════════════
+const resources = [
+  { id:'A201', icon:'🏫', name:'ROOM A-201', type:'Classroom', cap:60, status:'available' },
+  { id:'LAB3', icon:'💻', name:'CS LAB 3', type:'Computer Lab', cap:30, status:'available' },
+  { id:'HALL', icon:'🎭', name:'SEMINAR HALL', type:'Auditorium', cap:200, status:'busy' },
+  { id:'CONF1', icon:'🗣️', name:'CONF ROOM 1', type:'Meeting Room', cap:15, status:'available' },
+  { id:'LIB', icon:'📚', name:'LIBRARY HALL', type:'Study Space', cap:100, status:'maintenance' },
+  { id:'SPORT', icon:'⚽', name:'SPORTS COMPLEX', type:'Recreation', cap:500, status:'available' },
+];
+
+let selectedResource = null;
+
+function renderResources() {
+  const grid = document.getElementById('resourceGrid');
+  grid.innerHTML = resources.map(r => `
+    <div class="resource-card ${selectedResource === r.id ? 'selected' : ''}" onclick="selectResource('${r.id}')">
+      <div class="resource-status status-${r.status}"></div>
+      <div class="resource-icon">${r.icon}</div>
+      <div class="resource-name">${r.name}</div>
+      <div class="resource-info">${r.type}</div>
+      <div class="resource-capacity">CAPACITY: ${r.cap}</div>
+    </div>
+  `).join('');
+}
+
+function selectResource(id) {
+  selectedResource = id;
+  renderResources();
+  const r = resources.find(x => x.id === id);
+  showToast(`✓ ${r.name} selected for booking`, 'success');
+}
+
+renderResources();
+
+// ═══════════════════════════════════════════════════════
+// MINI CALENDAR
+// ═══════════════════════════════════════════════════════
+function renderCalendar() {
+  const cal = document.getElementById('miniCal');
+  const days = ['SU','MO','TU','WE','TH','FR','SA'];
+  const booked = [3,7,8,12,14,15,19,22,25,28];
+  const full = [5,11,17,24];
+
+  let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+  // April 2026 starts on Wednesday (idx 3)
+  for (let i = 0; i < 3; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= 30; d++) {
+    let cls = 'cal-day';
+    if (d === 12) cls += ' today';
+    else if (full.includes(d)) cls += ' booked-full';
+    else if (booked.includes(d)) cls += ' has-booking';
+    html += `<div class="${cls}">${d}</div>`;
+  }
+  cal.innerHTML = html;
+}
+renderCalendar();
+
+// ═══════════════════════════════════════════════════════
+// UPCOMING BOOKINGS
+// ═══════════════════════════════════════════════════════
+const upcoming = [
+  { time:'TODAY 14:00', text:'CS LAB 3 – Lab Session', sub:'30 students · 2 hrs' },
+  { time:'TODAY 16:30', text:'CONF ROOM 1 – Project Meeting', sub:'8 people · 1.5 hrs' },
+  { time:'APR 13 09:00', text:'SEMINAR HALL – Workshop', sub:'150 attendees · 4 hrs' },
+  { time:'APR 14 10:00', text:'ROOM A-201 – Lecture', sub:'55 students · 2 hrs' },
+];
+
+document.getElementById('upcomingList').innerHTML = upcoming.map((u,i) => `
+  <div class="timeline-item" style="animation-delay:${i*0.1}s">
+    <div class="timeline-time">${u.time}</div>
+    <div class="timeline-text">${u.text}</div>
+    <div class="timeline-sub">${u.sub}</div>
+  </div>
+`).join('');
+
+// ═══════════════════════════════════════════════════════
+// BOOKING
+// ═══════════════════════════════════════════════════════
+function submitBooking() {
+  const name = document.getElementById('bkName').value.trim();
+  const date = document.getElementById('bkDate').value;
+  const start = document.getElementById('bkStart').value;
+  const end = document.getElementById('bkEnd').value;
+  const purpose = document.getElementById('bkPurpose').value;
+  const att = document.getElementById('attendees').value;
+
+  if (!name || !date || !start || !end) {
+    showToast('⚠️ Please fill all required fields', 'error');
+    return;
+  }
+  if (!selectedResource) {
+    showToast('⚠️ Please select a resource first', 'warn');
+    return;
+  }
+
+  const id = 'BK-' + Math.random().toString(36).substr(2,6).toUpperCase();
+  const r = resources.find(x => x.id === selectedResource);
+
+  document.getElementById('r-id').textContent = id;
+  document.getElementById('r-res').textContent = r.name;
+  document.getElementById('r-date').textContent = date;
+  document.getElementById('r-time').textContent = start + ' – ' + end;
+  document.getElementById('r-att').textContent = att + ' people';
+  document.getElementById('r-purpose').textContent = purpose.toUpperCase();
+  document.getElementById('receipt').classList.add('show');
+
+  addLog(`✅ BOOKING CONFIRMED: ${r.name} — ${date} ${start}–${end} (${id})`, 'success');
+  showToast(`🎉 Booking confirmed! ID: ${id}`, 'success');
+  notifications.unshift({ msg: `✅ BOOKING CONFIRMED: ${r.name} at ${start}`, ts: 'just now', type: 'success' });
+}
+
+// ═══════════════════════════════════════════════════════
+// ENGINE: CONFLICT DETECTION
+// ═══════════════════════════════════════════════════════
+function checkConflict() {
+  const s = parseInt(document.getElementById('start').value);
+  const e = parseInt(document.getElementById('end').value);
+  const r = document.getElementById('conflictResult');
+
+  if (isNaN(s) || isNaN(e) || s < 0 || e > 24 || s >= e) {
+    r.innerHTML = '⚠️ INVALID INPUT — ENTER VALID HOURS (0–24)';
+    r.className = 'result-box result-warn';
+    showToast('Invalid time range', 'warn');
+    return;
+  }
+
+  // visualize
+  const viz = document.getElementById('newSlotViz');
+  viz.style.display = 'block';
+  viz.style.left = (s/24*100) + '%';
+  viz.style.width = ((e-s)/24*100) + '%';
+
+  const conflict = (s < 12) && (e > 10);
+
+  if (conflict) {
+    r.innerHTML = '❌ CONFLICT DETECTED — OVERLAPS 10:00–12:00';
+    r.className = 'result-box result-error';
+    viz.style.background = 'rgba(255,51,85,0.3)';
+    viz.style.borderColor = 'var(--red)';
+    addLog(`❌ CONFLICT: Slot ${s}:00–${e}:00 overlaps existing booking 10:00–12:00`, 'error');
+    showToast('❌ Booking conflict detected!', 'error');
+  } else {
+    r.innerHTML = '✅ SLOT CLEAR — BOOKING APPROVED';
+    r.className = 'result-box result-success';
+    viz.style.background = 'rgba(0,255,136,0.2)';
+    viz.style.borderColor = 'var(--green)';
+    addLog(`✅ CLEAR: Slot ${s}:00–${e}:00 has no conflicts`, 'success');
+    showToast('✅ Slot is clear and available', 'success');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ENGINE: PRICING
+// ═══════════════════════════════════════════════════════
+function livePrice() {
+  const base = 500;
+  const d = parseFloat(document.getElementById('demand').value) || 0;
+  const p = document.getElementById('peak').checked ? 1.5 : 1;
+  const ex = document.getElementById('exam').checked ? 1.8 : 1;
+  const we = document.getElementById('weekend').checked ? 1.2 : 1;
+  const eb = document.getElementById('earlybird').checked ? 0.85 : 1;
+  const final = base * (1 + d) * p * ex * we * eb;
+  document.getElementById('priceResult').textContent = '₹ ' + final.toFixed(0);
+}
+
+function calculatePrice() {
+  const base = 500;
+  const d = parseFloat(document.getElementById('demand').value) || 0;
+  const p = document.getElementById('peak').checked;
+  const ex = document.getElementById('exam').checked;
+  const we = document.getElementById('weekend').checked;
+  const eb = document.getElementById('earlybird').checked;
+
+  let price = base * (1 + d);
+  let breakdown = [`Base: ₹${base} × (1 + ${d.toFixed(2)} demand) = ₹${(base*(1+d)).toFixed(0)}`];
+
+  if (p) { price *= 1.5; breakdown.push('+ Peak Hours ×1.5'); }
+  if (ex) { price *= 1.8; breakdown.push('+ Exam Week ×1.8'); }
+  if (we) { price *= 1.2; breakdown.push('+ Weekend ×1.2'); }
+  if (eb) { price *= 0.85; breakdown.push('− Early Bird −15%'); }
+
+  const r = document.getElementById('priceResult');
+  r.className = 'result-box result-info';
+  r.style.cssText = 'font-size:28px;font-family:"Orbitron",monospace;color:var(--gold);border-color:var(--gold);margin-top:16px;';
+
+  let count = 0;
+  const interval = setInterval(() => {
+    count += price / 30;
+    if (count >= price) { count = price; clearInterval(interval); }
+    r.textContent = '₹ ' + Math.round(count);
+  }, 30);
+
+  document.getElementById('priceBreakdown').textContent = breakdown.join(' | ');
+  addLog(`💰 PRICE CALC: ₹${price.toFixed(0)} — ${breakdown.join(', ')}`, 'info');
+  showToast(`💰 Price calculated: ₹${price.toFixed(0)}`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+// ENGINE: COINS
+// ═══════════════════════════════════════════════════════
+function calculateCoins() {
+  const base = parseInt(document.getElementById('action').value);
+  const streak = parseFloat(document.getElementById('streak').value);
+  const current = parseInt(document.getElementById('currentCoins').value) || 0;
+
+  const earned = Math.round(base * streak);
+  const newTotal = current + earned;
+
+  document.getElementById('coinDisplay').style.display = 'block';
+  const el = document.getElementById('coinResult');
+
+  if (earned > 0) {
+    el.style.color = 'var(--gold)';
+    el.textContent = '+' + earned + ' 🪙';
+    document.getElementById('coinBreakdown').innerHTML =
+      `BASE: ${base} × STREAK ×${streak} = ${earned} coins<br>NEW TOTAL: ${newTotal} NEXUS COINS`;
+    showToast(`🏆 +${earned} coins earned! Streak ×${streak}`, 'success');
+    addLog(`🪙 REWARD: +${earned} coins (streak ×${streak}) — Total: ${newTotal}`, 'success');
+  } else {
+    el.style.color = 'var(--red)';
+    el.textContent = earned + ' 🪙';
+    document.getElementById('coinBreakdown').innerHTML =
+      `PENALTY: ${base} — NEW TOTAL: ${newTotal} NEXUS COINS`;
+    showToast(`⚠️ ${earned} coins penalty applied`, 'error');
+    addLog(`⚠️ PENALTY: ${earned} coins — Total: ${newTotal}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ENGINE: UTILIZATION
+// ═══════════════════════════════════════════════════════
+function calculateUtilization() {
+  const b = parseInt(document.getElementById('booked').value);
+  const t = parseInt(document.getElementById('total').value);
+  const r = document.getElementById('utilResult');
+
+  if (!b || !t || t <= 0) {
+    r.innerHTML = '⚠️ ENTER VALID HOURS';
+    r.className = 'result-box result-warn';
+    return;
+  }
+
+  const rate = (b / t) * 100;
+  let status, cls;
+
+  if (rate >= 80) { status = '🔴 CRITICAL — HIGH DEMAND'; cls = 'result-error'; }
+  else if (rate >= 60) { status = '🟡 MODERATE — OPTIMAL RANGE'; cls = 'result-warn'; }
+  else { status = '🟢 LOW — CAPACITY AVAILABLE'; cls = 'result-success'; }
+
+  r.innerHTML = `${rate.toFixed(1)}% UTILIZATION — ${status}`;
+  r.className = 'result-box ' + cls;
+
+  // Gauge
+  const gaugeWrap = document.getElementById('gaugeWrap');
+  gaugeWrap.style.display = 'block';
+  document.getElementById('gaugeVal').textContent = rate.toFixed(0) + '%';
+  const path = document.getElementById('gaugePath');
+  setTimeout(() => {
+    path.style.strokeDashoffset = 220 - (rate / 100 * 220);
+  }, 100);
+
+  // Bars
+  const bars = document.getElementById('utilBars');
+  bars.style.display = 'block';
+  const benchmarks = [
+    { name: 'CLASSROOMS', val: 78 }, { name: 'LABS', val: 65 },
+    { name: 'CONF ROOMS', val: 45 }, { name: 'AUDITORIUM', val: 30 },
+    { name: 'YOUR INPUT', val: rate }
+  ];
+  bars.innerHTML = '<div class="card-label" style="margin-bottom:10px;">BENCHMARKS</div>' +
+    benchmarks.map(bm => `
+      <div class="prog-wrap">
+        <div class="prog-head"><span>${bm.name}</span><span style="color:var(--cyan)">${bm.val.toFixed(0)}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${bm.val}%;transition:width 1s ${bm.name==='YOUR INPUT'?'0.5s':''}ease;"></div></div>
+      </div>
+    `).join('');
+
+  addLog(`📊 UTILIZATION: ${rate.toFixed(1)}% (${b}/${t} hrs) — ${status}`, rate >= 80 ? 'error' : 'info');
+  showToast(`📊 Utilization: ${rate.toFixed(1)}%`, rate >= 80 ? 'warn' : 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════
+let chartsInited = false;
+
+function initCharts() {
+  if (chartsInited) return;
+  chartsInited = true;
+
+  const defaultOpts = {
+    responsive: true,
+    plugins: { legend: { labels: { color: 'rgba(200,232,240,0.7)', font: { family: 'Share Tech Mono', size: 10 } } } },
+    scales: {
+      x: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+    }
+  };
+
+  // Week chart
+  new Chart(document.getElementById('weekChart'), {
+    type: 'bar',
+    data: {
+      labels: ['MON','TUE','WED','THU','FRI','SAT','SUN'],
+      datasets: [
+        { label: 'This Week', data: [18,24,32,28,40,15,8], backgroundColor: 'rgba(0,245,255,0.5)', borderColor: '#00f5ff', borderWidth: 1 },
+        { label: 'Last Week', data: [14,20,28,24,36,12,5], backgroundColor: 'rgba(255,0,170,0.3)', borderColor: '#ff00aa', borderWidth: 1 }
+      ]
+    },
+    options: { ...defaultOpts }
+  });
+
+  // Donut
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Classrooms','Labs','Conf Rooms','Auditorium','Others'],
+      datasets: [{ data: [38,27,16,12,7],
+        backgroundColor: ['rgba(0,245,255,0.7)','rgba(255,0,170,0.7)','rgba(255,215,0,0.7)','rgba(0,255,136,0.7)','rgba(255,107,0,0.7)'],
+        borderWidth: 0 }]
+    },
+    options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'right', labels: { color: 'rgba(200,232,240,0.7)', font: { family: 'Share Tech Mono', size: 10 }, boxWidth: 12 } } } }
+  });
+
+  // Heatmap (bar as proxy)
+  new Chart(document.getElementById('heatChart'), {
+    type: 'bar',
+    data: {
+      labels: ['8','9','10','11','12','13','14','15','16','17','18','19','20'],
+      datasets: [{
+        label: 'Bookings/hr',
+        data: [4,12,18,22,14,16,20,18,15,22,28,20,10],
+        backgroundColor: (ctx) => {
+          const v = ctx.raw;
+          if (v >= 22) return 'rgba(255,51,85,0.7)';
+          if (v >= 15) return 'rgba(255,215,0,0.7)';
+          return 'rgba(0,245,255,0.5)';
+        },
+        borderWidth: 0, borderRadius: 3
+      }]
+    },
+    options: { ...defaultOpts }
+  });
+
+  // Revenue
+  const revLabels = Array.from({length:30},(_,i)=>`${i+1}`);
+  const revData = revLabels.map(() => Math.floor(Math.random()*8000+2000));
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+      labels: revLabels,
+      datasets: [{ label: 'Revenue (₹)', data: revData, borderColor: '#00ff88', backgroundColor: 'rgba(0,255,136,0.08)', fill: true, tension: 0.4, pointRadius: 0 }]
+    },
+    options: { ...defaultOpts }
+  });
+
+  // Performance matrix
+  const perf = document.getElementById('perfMatrix');
+  perf.innerHTML = resources.map(r => `
+    <div class="prog-wrap">
+      <div class="prog-head">
+        <span>${r.icon} ${r.name}</span>
+        <span style="color:var(--${r.status==='available'?'green':r.status==='busy'?'red':'gold'});font-family:'Share Tech Mono',monospace;font-size:10px;">${r.status.toUpperCase()}</span>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" style="width:${Math.floor(Math.random()*50+40)}%;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// FLOOR MAP
+// ═══════════════════════════════════════════════════════
+function initFloor() { renderFloor(1); }
+
+const floorData = {
+  1: [
+    {id:'A101',st:'available',emoji:'🏫'},{id:'A102',st:'booked',emoji:'🏫'},{id:'A103',st:'available',emoji:'🏫'},
+    {id:'A104',st:'maintenance',emoji:'🔧'},{id:'A105',st:'available',emoji:'🏫'},{id:'A106',st:'booked',emoji:'🏫'},
+    {id:'LAB1',st:'available',emoji:'💻'},{id:'LAB2',st:'booked',emoji:'💻'},{id:'OFF1',st:'available',emoji:'🗄️'},
+    {id:'OFF2',st:'available',emoji:'🗄️'},{id:'WC1',st:'available',emoji:'🚻'},{id:'LIFT',st:'available',emoji:'🛗'},
+    {id:'STR1',st:'available',emoji:'📦'},{id:'A107',st:'booked',emoji:'🏫'},{id:'A108',st:'available',emoji:'🏫'},
+    {id:'CAFE',st:'available',emoji:'☕'},{id:'A109',st:'available',emoji:'🏫'},{id:'A110',st:'booked',emoji:'🏫'},
+  ],
+  2: [
+    {id:'B201',st:'available',emoji:'🏫'},{id:'B202',st:'available',emoji:'🏫'},{id:'B203',st:'booked',emoji:'🏫'},
+    {id:'B204',st:'available',emoji:'🏫'},{id:'B205',st:'maintenance',emoji:'🔧'},{id:'B206',st:'available',emoji:'🏫'},
+    {id:'HALL',st:'booked',emoji:'🎭'},{id:'CF1',st:'available',emoji:'🗣️'},{id:'CF2',st:'booked',emoji:'🗣️'},
+    {id:'B207',st:'available',emoji:'🏫'},{id:'B208',st:'available',emoji:'🏫'},{id:'B209',st:'booked',emoji:'🏫'},
+  ],
+  3: [
+    {id:'C301',st:'available',emoji:'🏫'},{id:'C302',st:'available',emoji:'🏫'},{id:'LAB3',st:'available',emoji:'💻'},
+    {id:'LAB4',st:'booked',emoji:'💻'},{id:'LAB5',st:'available',emoji:'💻'},{id:'C303',st:'maintenance',emoji:'🔧'},
+    {id:'C304',st:'available',emoji:'🏫'},{id:'C305',st:'booked',emoji:'🏫'},{id:'PROJ',st:'available',emoji:'📽️'},
+  ],
+  4: [
+    {id:'D401',st:'booked',emoji:'🏫'},{id:'D402',st:'available',emoji:'🏫'},{id:'LIB',st:'maintenance',emoji:'📚'},
+    {id:'D403',st:'available',emoji:'🏫'},{id:'D404',st:'available',emoji:'🏫'},{id:'D405',st:'booked',emoji:'🏫'},
+  ],
+};
+
+function selectFloor(n) {
+  renderFloor(n);
+  showToast(`🗺️ Floor ${n} loaded`, 'info');
+}
+
+function renderFloor(floor) {
+  const grid = document.getElementById('floorGrid');
+  const cells = floorData[floor] || floorData[1];
+  grid.innerHTML = cells.map(c => `
+    <div class="floor-cell room-${c.st}" onclick="selectRoom('${c.id}','${c.st}')">
+      <span>${c.emoji}</span>
+      <span>${c.id}</span>
+    </div>
+  `).join('');
+}
+
+function selectRoom(id, status) {
+  document.getElementById('selectedRoomName').textContent = '● ' + id;
+  const infoMap = {
+    available: `<span style="color:var(--green)">✓ AVAILABLE — READY TO BOOK</span><br><br>Click BOOKING tab to reserve this room.`,
+    booked: `<span style="color:var(--red)">✗ CURRENTLY BOOKED</span><br><br>Next available slot: Tomorrow 09:00`,
+    maintenance: `<span style="color:var(--gold)">⚠ UNDER MAINTENANCE</span><br><br>Expected to be operational by tomorrow.`
+  };
+  document.getElementById('selectedRoomInfo').innerHTML = infoMap[status] || '';
+}
+
+// ═══════════════════════════════════════════════════════
+// REWARDS
+// ═══════════════════════════════════════════════════════
+function initRewards() {
+  const lb = [
+    { name:'Vatsal Sharma', coins:1240, emoji:'👑', streak:7 },
+    { name:'Priya Mehta', coins:1105, emoji:'🥈', streak:5 },
+    { name:'Rahul Verma', coins:980, emoji:'🥉', streak:4 },
+    { name:'Sneha Gupta', coins:840, emoji:'🎖', streak:3 },
+    { name:'Arjun Singh', coins:720, emoji:'🎖', streak:2 },
+    { name:'Divya Sharma', coins:650, emoji:'🎖', streak:1 },
+  ];
+
+  const rankClasses = ['gold-rank','silver-rank','bronze-rank','','',''];
+
+  document.getElementById('leaderboard').innerHTML = lb.map((u,i) => `
+    <div class="leaderboard-row">
+      <div class="lb-rank ${rankClasses[i]}">#${i+1}</div>
+      <div class="lb-avatar">${u.emoji}</div>
+      <div>
+        <div class="lb-name">${u.name}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);">🔥 ${u.streak} day streak</div>
+      </div>
+      <div class="lb-coins">${u.coins} 🪙</div>
+    </div>
+  `).join('');
+
+  // Coin history chart
+  if (!document.getElementById('coinHistChart')._chart) {
+    const ch = new Chart(document.getElementById('coinHistChart'), {
+      type: 'line',
+      data: {
+        labels: ['7d','6d','5d','4d','3d','2d','1d','Today'],
+        datasets: [{ label: 'Coins', data: [800,860,920,1000,1060,1140,1200,1240],
+          borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)',
+          fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ffd700' }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+    document.getElementById('coinHistChart')._chart = ch;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// AI ASSIST
+// ═══════════════════════════════════════════════════════
+function initAI() {
+  // Forecast chart
+  const fc = document.getElementById('forecastChart');
+  if (!fc._chart) {
+    fc._chart = new Chart(fc, {
+      type: 'line',
+      data: {
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets: [
+          { label: 'Predicted Demand', data: [68,75,82,89,92,45,35],
+            borderColor: '#ff00aa', backgroundColor: 'rgba(255,0,170,0.1)',
+            fill: true, tension: 0.4, borderDash: [5,3] },
+          { label: 'Historical Avg', data: [62,70,78,80,85,40,30],
+            borderColor: 'rgba(200,232,240,0.3)', tension: 0.4, pointRadius: 0 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: 'rgba(200,232,240,0.7)', font: { family: 'Share Tech Mono', size: 10 } } } },
+        scales: {
+          x: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: 'rgba(200,232,240,0.5)', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+
+  // AI Tips
+  const tips = [
+    { time:'TIP 01', text:'Book CS Lab before 10am to avoid peak surcharge', sub:'Saves ~₹200/session' },
+    { time:'TIP 02', text:'Seminar Hall availability improves after 4pm', sub:'60% lower conflict rate' },
+    { time:'TIP 03', text:'Wednesday peak: book 2 days in advance', sub:'Current fill rate: 89%' },
+    { time:'TIP 04', text:'Enable early-bird discount for Friday slots', sub:'15% cost reduction available' },
+  ];
+  document.getElementById('aiTips').innerHTML = tips.map((t,i) => `
+    <div class="timeline-item" style="animation-delay:${i*0.1}s">
+      <div class="timeline-time">${t.time}</div>
+      <div class="timeline-text">${t.text}</div>
+      <div class="timeline-sub">${t.sub}</div>
+    </div>
+  `).join('');
+}
+
+function runAI() {
+  const req = document.getElementById('aiReqType').value;
+  const time = document.getElementById('aiTime').value;
+  const prio = document.getElementById('aiPriority').value;
+
+  document.getElementById('aiThinking').classList.add('show');
+  document.getElementById('aiOutput').style.display = 'none';
+
+  setTimeout(() => {
+    document.getElementById('aiThinking').classList.remove('show');
+    const recs = {
+      'Lecture for 60 students': { room: 'ROOM A-201', slot: '10:00–12:00', price: '₹650', conf: '94%' },
+      'Small group meeting (10 people)': { room: 'CONF ROOM 1', slot: '14:00–15:30', price: '₹320', conf: '98%' },
+      'Computer lab session': { room: 'CS LAB 3', slot: '09:00–11:00', price: '₹480', conf: '88%' },
+      'Seminar / Conference': { room: 'SEMINAR HALL', slot: '16:00–20:00', price: '₹2,100', conf: '72%' },
+      'Sports / Recreation': { room: 'SPORTS COMPLEX', slot: '06:00–08:00', price: '₹200', conf: '99%' },
+      'Examination hall': { room: 'ROOM A-201', slot: '09:00–12:00', price: '₹900', conf: '91%' },
+    };
+
+    const rec = recs[req] || recs['Lecture for 60 students'];
+    const out = document.getElementById('aiOutput');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <div style="background:rgba(0,245,255,0.04);border:1px solid var(--cyan);border-radius:4px;padding:20px;">
+        <div style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:var(--cyan);margin-bottom:14px;">🤖 AI RECOMMENDATION</div>
+        <div style="display:grid;gap:8px;font-family:'Share Tech Mono',monospace;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim)">RECOMMENDED ROOM</span><span style="color:var(--cyan)">${rec.room}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim)">OPTIMAL SLOT</span><span style="color:var(--green)">${rec.slot}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim)">ESTIMATED COST</span><span style="color:var(--gold)">${rec.price}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim)">CONFIDENCE SCORE</span><span style="color:var(--magenta)">${rec.conf}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim)">PRIORITY OPTIMIZED</span><span style="color:var(--text)">${prio}</span></div>
+        </div>
+        <button class="btn btn-cyan" style="margin-top:14px;font-size:10px;" onclick="showToast('✅ AI recommendation applied to booking form','success')">✓ APPLY RECOMMENDATION</button>
+      </div>
+    `;
+
+    addLog(`🤖 AI RECOMMEND: ${rec.room} @ ${rec.slot} — confidence ${rec.conf}`, 'info');
+    showToast('🤖 AI recommendation ready!', 'success');
+  }, 2200);
+}
+
+// ═══════════════════════════════════════════════════════
+// ACTIVITY LOG
+// ═══════════════════════════════════════════════════════
+const logEntries = [
+  { msg:'🚀 NEXUS COMMAND CENTER initialized', type:'info', ts: new Date() },
+  { msg:'✅ BOOKING: Room A-201 confirmed (BK-4F2A8B)', type:'success', ts: new Date(Date.now()-60000) },
+  { msg:'💰 PRICING: ₹750 calculated for exam-week booking', type:'info', ts: new Date(Date.now()-120000) },
+  { msg:'❌ CONFLICT: Seminar Hall B slot 14:00–16:00 rejected', type:'error', ts: new Date(Date.now()-180000) },
+  { msg:'🏆 REWARD: Vatsal Sharma earned +20 coins (7-day streak)', type:'success', ts: new Date(Date.now()-240000) },
+];
+
+function addLog(msg, type='info') {
+  logEntries.unshift({ msg, type, ts: new Date() });
+  if (document.getElementById('tab-log').classList.contains('active')) renderLog();
+}
+
+function initLog() { renderLog(); }
+
+function renderLog() {
+  const colors = { success: 'var(--green)', error: 'var(--red)', warn: 'var(--gold)', info: 'var(--cyan)' };
+  document.getElementById('activityLog').innerHTML = logEntries.map((e,i) => `
+    <div class="timeline-item" style="animation-delay:${i*0.05}s">
+      <div class="timeline-time" style="color:${colors[e.type]||'var(--cyan)'};">${e.ts.toLocaleTimeString()}</div>
+      <div class="timeline-text" style="font-size:13px;">${e.msg}</div>
+    </div>
+  `).join('');
+}
+
+function exportLog() {
+  const text = logEntries.map(e => `[${e.ts.toLocaleTimeString()}] ${e.msg}`).join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nexus-activity-log.txt';
+  a.click();
+  showToast('📥 Log exported successfully', 'success');
+}
+
+function clearConflicts() {
+  showToast('🔧 All conflicts resolved by admin override', 'success');
+  addLog('🔧 ADMIN: All booking conflicts manually resolved', 'success');
+  document.getElementById('kpi3').textContent = '0';
+}
+
+function generateReport() {
+  showToast('📊 Full report generated — check downloads', 'success');
+  addLog('📊 REPORT: Full system analytics report generated', 'info');
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTO LOG FEED
+// ═══════════════════════════════════════════════════════
+const autoLogs = [
+  ['🔄 SYNC: Database synchronized — 0 anomalies detected', 'info'],
+  ['📊 ANALYTICS: Utilization report auto-generated', 'info'],
+  ['💰 PRICING: Off-peak rate applied to 3 new bookings', 'success'],
+  ['🔔 ALERT: Room A-109 approaching capacity (85%)', 'warn'],
+  ['✅ BOOKING: CS Lab 3 confirmed for tomorrow 09:00', 'success'],
+  ['🤖 AI: Demand spike predicted Thursday — initiating peak pricing', 'warn'],
+  ['🏆 LEADERBOARD: Rankings updated', 'info'],
+];
+
+let autoIdx = 0;
+setInterval(() => {
+  const [msg, type] = autoLogs[autoIdx % autoLogs.length];
+  addLog(msg, type);
+  autoIdx++;
+}, 8000);
+
+// ═══════════════════════════════════════════════════════
+// SET DEFAULT DATE
+// ═══════════════════════════════════════════════════════
+document.getElementById('bkDate').value = '2026-04-12';
+document.getElementById('bkStart').value = '14:00';
+document.getElementById('bkEnd').value = '16:00';
+
+showToast('🚀 NEXUS Command Center online', 'success');
 </script>
-
 </body>
 </html>
